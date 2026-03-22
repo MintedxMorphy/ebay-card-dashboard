@@ -7,90 +7,113 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-2000"></div>
-      </div>
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Scanline effect background */}
+      <div className="fixed inset-0 opacity-5 pointer-events-none" style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.1) 2px, rgba(0, 255, 65, 0.1) 4px)',
+      }}></div>
+
+      {/* Grid background */}
+      <div className="fixed inset-0 opacity-10 pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(0, 255, 65, 0.1) 25%, rgba(0, 255, 65, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 255, 65, 0.1) 75%, rgba(0, 255, 65, 0.1) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 255, 65, 0.1) 25%, rgba(0, 255, 65, 0.1) 26%, transparent 27%, transparent 74%, rgba(0, 255, 65, 0.1) 75%, rgba(0, 255, 65, 0.1) 76%, transparent 77%, transparent)',
+        backgroundSize: '50px 50px',
+      }}></div>
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-20">
-        {/* Main content */}
-        <div className="max-w-2xl w-full text-center space-y-8">
-          {/* Title with emoji */}
-          <div className="space-y-4">
-            <div className="text-6xl md:text-8xl mb-4 animate-bounce">
-              💰🃏
+        {/* Top decorative line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00ff41] to-transparent"></div>
+
+        <div className="max-w-2xl w-full text-center space-y-12">
+          {/* Logo / Title */}
+          <div className="space-y-6">
+            <div className="text-6xl font-mono font-black text-[#00ff41] drop-shadow-lg" style={{
+              textShadow: '0 0 20px rgba(0, 255, 65, 0.5), 0 0 40px rgba(255, 0, 110, 0.3)',
+            }}>
+              {'> CARDTRACK'}
             </div>
-            <h1 className="text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 leading-tight">
-              CardTrack
-            </h1>
-            <p className="text-xl md:text-2xl text-purple-300 font-bold">
-              Your Card Game Economy Dashboard
+            <div className="h-px bg-gradient-to-r from-transparent via-[#ff006e] to-transparent"></div>
+            <p className="text-xs md:text-sm text-gray-400 font-mono tracking-widest uppercase">
+              Neural Card Economy Interface v2.0
             </p>
           </div>
 
-          {/* Subtitle */}
-          <div className="space-y-3">
-            <p className="text-base md:text-lg text-gray-300">
-              Track your <span className="text-red-400 font-bold">Sports</span> & <span className="text-yellow-400 font-bold">Pokémon</span> card buys and sells
+          {/* Description */}
+          <div className="space-y-4 border border-[#00ff41] border-opacity-20 p-6 bg-black bg-opacity-50 backdrop-blur">
+            <p className="text-sm md:text-base text-gray-300 font-mono leading-relaxed">
+              <span className="text-[#00ff41]">{'$'}</span> Track your card buys & sells in real-time
             </p>
-            <p className="text-sm md:text-base text-gray-400">
-              See your profits, analyze trends, and dominate the card game economy 📈
+            <p className="text-sm md:text-base text-gray-300 font-mono leading-relaxed">
+              <span className="text-[#ff006e]">{'>'}</span> Monitor P&L metrics across Sports & Pokémon
+            </p>
+            <p className="text-sm md:text-base text-gray-300 font-mono leading-relaxed">
+              <span className="text-[#00ff41]">{'#'}</span> Visual analytics. Zero noise. Pure data.
             </p>
           </div>
 
-          {/* Features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-900/50 to-purple-800/50 border border-purple-500/30 hover:border-purple-400/60 transition">
-              <div className="text-3xl mb-2">📊</div>
-              <p className="font-bold text-purple-300">Real-Time Stats</p>
-              <p className="text-sm text-gray-400">See your profit & loss instantly</p>
+          {/* Stats preview */}
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="border border-[#00ff41] border-opacity-30 p-3 bg-black bg-opacity-50">
+              <div className="text-[#00ff41] text-2xl font-mono font-black">12</div>
+              <div className="text-xs text-gray-500 font-mono mt-1">Transactions</div>
             </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-900/50 to-blue-800/50 border border-blue-500/30 hover:border-blue-400/60 transition">
-              <div className="text-3xl mb-2">📈</div>
-              <p className="font-bold text-blue-300">Charts & Graphs</p>
-              <p className="text-sm text-gray-400">Watch your profits grow over time</p>
+            <div className="border border-[#ff006e] border-opacity-30 p-3 bg-black bg-opacity-50">
+              <div className="text-[#ff006e] text-2xl font-mono font-black">$370</div>
+              <div className="text-xs text-gray-500 font-mono mt-1">Total Revenue</div>
             </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-pink-900/50 to-pink-800/50 border border-pink-500/30 hover:border-pink-400/60 transition">
-              <div className="text-3xl mb-2">🎯</div>
-              <p className="font-bold text-pink-300">Category Breakdown</p>
-              <p className="text-sm text-gray-400">Sports vs Pokémon performance</p>
+            <div className="border border-[#00ff41] border-opacity-30 p-3 bg-black bg-opacity-50">
+              <div className="text-[#00ff41] text-2xl font-mono font-black">$86.50</div>
+              <div className="text-xs text-gray-500 font-mono mt-1">Profit</div>
             </div>
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg rounded-lg hover:from-purple-600 hover:to-pink-600 transition transform hover:scale-105 shadow-lg"
+              className="px-8 py-3 border-2 border-[#00ff41] text-[#00ff41] font-mono font-bold text-sm uppercase tracking-widest hover:bg-[#00ff41] hover:text-black transition duration-300"
+              style={{
+                boxShadow: '0 0 15px rgba(0, 255, 65, 0.3), inset 0 0 15px rgba(0, 255, 65, 0.1)',
+              }}
             >
-              🚀 Launch Dashboard
+              → Execute Dashboard
             </button>
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-lg rounded-lg hover:from-blue-600 hover:to-purple-600 transition transform hover:scale-105 shadow-lg"
+              className="px-8 py-3 border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold text-sm uppercase tracking-widest hover:bg-[#ff006e] hover:text-black transition duration-300"
+              style={{
+                boxShadow: '0 0 15px rgba(255, 0, 110, 0.3), inset 0 0 15px rgba(255, 0, 110, 0.1)',
+              }}
             >
-              📊 View Demo Data
+              ◆ View Data
             </button>
           </div>
 
-          {/* Info box */}
-          <div className="mt-12 p-6 rounded-lg bg-slate-900/50 border border-purple-500/30 backdrop-blur">
-            <p className="text-sm md:text-base text-gray-300 mb-3">
-              <span className="text-green-400 font-bold">✅ Demo Data Ready</span> - See sample transactions now!
-            </p>
-            <p className="text-xs md:text-sm text-gray-400">
-              When your eBay API is approved, connect it to see your real transactions auto-sync. No login needed to start! 🎮
-            </p>
+          {/* Info terminal */}
+          <div className="border border-gray-700 p-6 bg-black bg-opacity-70 font-mono text-xs text-gray-400 space-y-2">
+            <div>
+              <span className="text-[#00ff41]">{'>>>'}</span> Demo environment initialized
+            </div>
+            <div>
+              <span className="text-[#ff006e]">{'[!]'}</span> Live data ready. No authentication required.
+            </div>
+            <div>
+              <span className="text-[#00ff41]">{'✓'}</span> Awaiting eBay API credentials for sync
+            </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-16 text-center text-gray-500 text-sm">
-            <p>Built for card traders who mean business 💪</p>
-            <p className="mt-2 text-xs">Dashboard by Zero Cool • Powered by Next.js + Supabase</p>
+          <div className="border-t border-gray-700 pt-8 text-center">
+            <p className="text-xs text-gray-500 font-mono">
+              {'[ CARDTRACK ]'} • Built for traders who move fast
+            </p>
+            <p className="text-[10px] text-gray-600 font-mono mt-2">
+              v2.0 • Zero Cool Engine • Neon Protocol Active
+            </p>
           </div>
         </div>
+
+        {/* Bottom decorative line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00ff41] to-transparent"></div>
       </div>
     </div>
   );
