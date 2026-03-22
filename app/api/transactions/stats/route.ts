@@ -31,8 +31,10 @@ export async function GET() {
     const stats = {
       sports_spent: 0,
       sports_revenue: 0,
+      sports_profit: 0,
       pokemon_spent: 0,
       pokemon_revenue: 0,
+      pokemon_profit: 0,
       total_profit: 0,
       transactions: transactions || [],
     };
