@@ -1,98 +1,67 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase credentials');
+}
+
+export async function GET() {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
+    const supabase = createClient(supabaseUrl!, supabaseKey!);
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Missing userId' },
-        { status: 400 }
-      );
-    }
-
-    // Get all transactions for user
+    // Fetch all transactions for demo user
     const { data: transactions, error } = await supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', '550e8400-e29b-41d4-a716-446655440000')
+      .order('transaction_date', { ascending: false });
 
     if (error) {
-      console.error('Database error:', error);
+      console.error('Supabase error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch transactions' },
+        { error: error.message },
         { status: 500 }
       );
     }
 
     // Calculate stats
     const stats = {
-      totalSpent: 0,
-      totalRevenue: 0,
-      netProfit: 0,
-      sports: { spent: 0, revenue: 0, items: 0 },
-      pokemon: { spent: 0, revenue: 0, items: 0 },
-      overTime: [] as Array<{ date: string; profit: number; revenue: number; spent: number }>,
+      sports_spent: 0,
+      sports_revenue: 0,
+      pokemon_spent: 0,
+      pokemon_revenue: 0,
+      total_profit: 0,
+      transactions: transactions || [],
     };
 
-    // Group by date for over-time chart
-    const dateMap: Record<string, { profit: number; revenue: number; spent: number }> = {};
-
-    for (const tx of transactions || []) {
-      const date = new Date(tx.created_at).toLocaleDateString('en-US');
-
-      if (!dateMap[date]) {
-        dateMap[date] = { profit: 0, revenue: 0, spent: 0 };
-      }
-
-      if (tx.type === 'sell') {
-        stats.totalRevenue += tx.amount * tx.quantity;
-        dateMap[date].revenue += tx.amount * tx.quantity;
-
-        if (tx.card_type === 'sports') {
-          stats.sports.revenue += tx.amount * tx.quantity;
-        } else if (tx.card_type === 'pokemon') {
-          stats.pokemon.revenue += tx.amount * tx.quantity;
+    transactions?.forEach((tx: any) => {
+      if (tx.card_category === 'sports') {
+        if (tx.transaction_type === 'buy') {
+          stats.sports_spent += tx.amount;
+        } else {
+          stats.sports_revenue += tx.amount;
         }
-      } else if (tx.type === 'buy') {
-        stats.totalSpent += tx.amount * tx.quantity;
-        dateMap[date].spent += tx.amount * tx.quantity;
-
-        if (tx.card_type === 'sports') {
-          stats.sports.spent += tx.amount * tx.quantity;
-        } else if (tx.card_type === 'pokemon') {
-          stats.pokemon.spent += tx.amount * tx.quantity;
+      } else if (tx.card_category === 'pokemon') {
+        if (tx.transaction_type === 'buy') {
+          stats.pokemon_spent += tx.amount;
+        } else {
+          stats.pokemon_revenue += tx.amount;
         }
       }
+    });
 
-      if (tx.card_type === 'sports') {
-        stats.sports.items += tx.quantity;
-      } else if (tx.card_type === 'pokemon') {
-        stats.pokemon.items += tx.quantity;
-      }
-    }
-
-    stats.netProfit = stats.totalRevenue - stats.totalSpent;
-    stats.sports.spent = stats.sports.spent || 0;
-    stats.sports.revenue = stats.sports.revenue || 0;
-    stats.pokemon.spent = stats.pokemon.spent || 0;
-    stats.pokemon.revenue = stats.pokemon.revenue || 0;
-
-    // Convert dateMap to sorted array
-    stats.overTime = Object.entries(dateMap)
-      .map(([date, data]) => ({
-        date,
-        ...data,
-        profit: data.revenue - data.spent,
-      }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    stats.sports_profit = stats.sports_revenue - stats.sports_spent;
+    stats.pokemon_profit = stats.pokemon_revenue - stats.pokemon_spent;
+    stats.total_profit = stats.sports_profit + stats.pokemon_profit;
 
     return NextResponse.json(stats);
   } catch (error) {
-    console.error('Stats error:', error);
+    console.error('Error:', error);
     return NextResponse.json(
-      { error: 'Failed to calculate stats' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
