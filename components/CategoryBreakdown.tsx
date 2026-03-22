@@ -4,8 +4,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 interface CategoryBreakdownProps {
   stats: {
-    sports: { spent: number; revenue: number; items: number };
-    pokemon: { spent: number; revenue: number; items: number };
+    sports_spent: number;
+    sports_revenue: number;
+    sports_profit: number;
+    pokemon_spent: number;
+    pokemon_revenue: number;
+    pokemon_profit: number;
   };
 }
 
@@ -14,59 +18,68 @@ export default function CategoryBreakdown({ stats }: CategoryBreakdownProps) {
 
   const data = [
     {
-      category: 'Sports Cards',
-      revenue: stats.sports.revenue,
-      spent: stats.sports.spent,
-      profit: stats.sports.revenue - stats.sports.spent,
+      category: '🏈 Sports',
+      revenue: stats.sports_revenue,
+      spent: stats.sports_spent,
+      profit: stats.sports_profit,
     },
     {
-      category: 'Pokemon Cards',
-      revenue: stats.pokemon.revenue,
-      spent: stats.pokemon.spent,
-      profit: stats.pokemon.revenue - stats.pokemon.spent,
+      category: '⚡ Pokemon',
+      revenue: stats.pokemon_revenue,
+      spent: stats.pokemon_spent,
+      profit: stats.pokemon_profit,
     },
   ];
 
+  const sportsItems = Math.round(stats.sports_spent / 50); // Estimate based on avg card price
+  const pokemonItems = Math.round(stats.pokemon_spent / 40);
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Category Breakdown</h2>
+    <div className="w-full">
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="category" fontSize={12} tick={{ fill: '#6b7280' }} />
-          <YAxis fontSize={12} tick={{ fill: '#6b7280' }} tickFormatter={formatCurrency} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
+          <XAxis dataKey="category" fontSize={12} tick={{ fill: '#9ca3af' }} />
+          <YAxis fontSize={12} tick={{ fill: '#9ca3af' }} tickFormatter={formatCurrency} />
           <Tooltip
             formatter={(value: unknown) => formatCurrency(typeof value === 'number' ? value : 0)}
             contentStyle={{
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
+              backgroundColor: '#1f2937',
+              border: '1px solid #404040',
               borderRadius: '8px',
+              color: '#fff',
             }}
+            labelStyle={{ color: '#fff' }}
           />
-          <Legend />
-          <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" />
-          <Bar dataKey="spent" fill="#f97316" name="Spent" />
-          <Bar dataKey="profit" fill="#10b981" name="Profit" />
+          <Legend wrapperStyle={{ color: '#9ca3af' }} />
+          <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="spent" fill="#f97316" name="Spent" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="profit" fill="#10b981" name="Profit" radius={[8, 8, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
 
+      {/* Category Stats */}
       <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">🏆 Sports Cards</h3>
-          <p className="text-sm text-blue-700">
-            Items: <span className="font-bold">{stats.sports.items}</span>
+        <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 border border-red-500/30 p-4 rounded-lg backdrop-blur">
+          <h3 className="font-semibold text-red-300 mb-2">🏈 Sports Cards</h3>
+          <p className="text-sm text-red-200">
+            Items: <span className="font-bold">{sportsItems}</span>
           </p>
-          <p className="text-sm text-blue-700">
-            Profit: <span className="font-bold">${(stats.sports.revenue - stats.sports.spent).toFixed(2)}</span>
+          <p className="text-sm text-red-200">
+            Profit: <span className={`font-bold ${stats.sports_profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {formatCurrency(stats.sports_profit)}
+            </span>
           </p>
         </div>
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-yellow-900 mb-2">⚡ Pokemon Cards</h3>
-          <p className="text-sm text-yellow-700">
-            Items: <span className="font-bold">{stats.pokemon.items}</span>
+        <div className="bg-gradient-to-br from-yellow-900/50 to-yellow-800/50 border border-yellow-500/30 p-4 rounded-lg backdrop-blur">
+          <h3 className="font-semibold text-yellow-300 mb-2">⚡ Pokemon Cards</h3>
+          <p className="text-sm text-yellow-200">
+            Items: <span className="font-bold">{pokemonItems}</span>
           </p>
-          <p className="text-sm text-yellow-700">
-            Profit: <span className="font-bold">${(stats.pokemon.revenue - stats.pokemon.spent).toFixed(2)}</span>
+          <p className="text-sm text-yellow-200">
+            Profit: <span className={`font-bold ${stats.pokemon_profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {formatCurrency(stats.pokemon_profit)}
+            </span>
           </p>
         </div>
       </div>
