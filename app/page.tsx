@@ -40,13 +40,13 @@ export default function Home() {
           {/* Description */}
           <div className="space-y-4 border border-[#00ff41] border-opacity-20 p-6 bg-black bg-opacity-50 backdrop-blur">
             <p className="text-sm md:text-base text-gray-300 font-mono leading-relaxed">
-              <span className="text-[#00ff41]">{'$'}</span> Track your card buys & sells in real-time
+              <span className="text-[#00ff41]">{'$'}</span> Sync your eBay sales in real-time
             </p>
             <p className="text-sm md:text-base text-gray-300 font-mono leading-relaxed">
-              <span className="text-[#ff006e]">{'>'}</span> Monitor P&L metrics across Sports & Pokémon
+              <span className="text-[#ff006e]">{'>'}</span> Track P&L across Sports & Pokémon cards
             </p>
             <p className="text-sm md:text-base text-gray-300 font-mono leading-relaxed">
-              <span className="text-[#00ff41]">{'#'}</span> Visual analytics. Zero noise. Pure data.
+              <span className="text-[#00ff41]">{'#'}</span> Real data. Instant insights. No fees.
             </p>
           </div>
 
@@ -66,8 +66,17 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CTA Button */}
-          <div className="pt-4">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <a
+              href="/api/auth/ebay"
+              className="px-10 py-4 border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold text-base uppercase tracking-widest hover:bg-[#ff006e] hover:text-black transition duration-300 text-center"
+              style={{
+                boxShadow: '0 0 20px rgba(255, 0, 110, 0.4), inset 0 0 20px rgba(255, 0, 110, 0.1)',
+              }}
+            >
+              ◆ Login with eBay
+            </a>
             <button
               onClick={() => router.push('/dashboard')}
               className="px-10 py-4 border-2 border-[#00ff41] text-[#00ff41] font-mono font-bold text-base uppercase tracking-widest hover:bg-[#00ff41] hover:text-black transition duration-300"
@@ -75,20 +84,20 @@ export default function Home() {
                 boxShadow: '0 0 20px rgba(0, 255, 65, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.1)',
               }}
             >
-              → Execute Dashboard
+              → Demo Dashboard
             </button>
           </div>
 
           {/* Info terminal */}
           <div className="border border-gray-700 p-6 bg-black bg-opacity-70 font-mono text-xs text-gray-400 space-y-2">
             <div>
-              <span className="text-[#00ff41]">{'>>>'}</span> Demo environment initialized
+              <span className="text-[#00ff41]">{'>>>'}</span> eBay OAuth configured
             </div>
             <div>
-              <span className="text-[#ff006e]">{'[!]'}</span> Live data ready. No authentication required.
+              <span className="text-[#ff006e]">{'[!]'}</span> Login with eBay for real sales data
             </div>
             <div>
-              <span className="text-[#00ff41]">{'✓'}</span> Awaiting eBay API credentials for sync
+              <span className="text-[#00ff41]">{'✓'}</span> Demo mode available without login
             </div>
           </div>
 
