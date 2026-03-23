@@ -35,23 +35,17 @@ export default function Dashboard() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAuthAndFetchStats = async () => {
+    const fetchStats = async () => {
       try {
         setLoading(true);
 
-        // Check if user is authenticated
-        const userIdCookie = document.cookie
-          .split('; ')
-          .find((row) => row.startsWith('userId='))
-          ?.split('=')[1];
+        // For now, use demo data to avoid auth redirect loop
+        // TODO: Re-enable auth check once callback redirect is fixed
+        const userId = 'gabriel_ebay_account';
+        setUserId(userId);
 
-        // Use authenticated userId if available, otherwise use test userId
-        const finalUserId = userIdCookie || 'gabriel_ebay_account';
-        setUserId(finalUserId);
-        console.log('Using userId:', finalUserId);
-
-        // Fetch real stats for this user
-        const response = await fetch(`/api/transactions/stats?userId=${finalUserId}`);
+        // Fetch stats (demo data for now)
+        const response = await fetch(`/api/transactions/stats?userId=${userId}`);
 
         if (!response.ok) {
           throw new Error('Failed to load dashboard');
@@ -68,8 +62,8 @@ export default function Dashboard() {
       }
     };
 
-    checkAuthAndFetchStats();
-  }, [router]);
+    fetchStats();
+  }, []);
 
   if (loading) {
     return (
