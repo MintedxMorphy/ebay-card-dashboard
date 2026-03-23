@@ -41,7 +41,7 @@ export default function Dashboard() {
 
         // For now, use demo data to avoid auth redirect loop
         // TODO: Re-enable auth check once callback redirect is fixed
-        const userId = 'gabriel_ebay_account';
+        const userId = '550e8400-e29b-41d4-a716-446655440000'; // Demo user ID
         setUserId(userId);
 
         // Fetch stats (demo data for now)
