@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const clientId = process.env.EBAY_CLIENT_ID;
-    const clientSecret = process.env.EBAY_CLIENT_SECRET;
-    const redirectUri = process.env.EBAY_REDIRECT_URI;
+    const clientId = process.env.EBAY_CLIENT_ID?.trim();
+    const clientSecret = process.env.EBAY_CLIENT_SECRET?.trim();
+    const redirectUri = process.env.EBAY_REDIRECT_URI?.trim();
 
     console.log('=== eBay OAuth Debug ===');
     console.log('EBAY_CLIENT_ID:', clientId ? `${clientId.substring(0, 20)}...` : 'MISSING');
