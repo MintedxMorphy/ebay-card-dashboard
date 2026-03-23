@@ -28,12 +28,21 @@ export const getAccessToken = async (code: string) => {
   const clientSecret = process.env.EBAY_CLIENT_SECRET?.trim();
   const redirectUri = process.env.EBAY_REDIRECT_URI?.trim();
 
+  console.log('=== Token Exchange Debug ===');
+  console.log('Client ID:', clientId?.substring(0, 20) + '...');
+  console.log('Redirect URI:', redirectUri);
+  console.log('Code:', code?.substring(0, 20) + '...');
+
   const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const bodyStr = `grant_type=authorization_code&code=${code}&redirect_uri=${redirectUri}`;
+
+  console.log('Token URL:', EBAY_TOKEN_URL);
+  console.log('Body:', bodyStr.substring(0, 100) + '...');
 
   try {
     const response = await axios.post(
       EBAY_TOKEN_URL,
-      `grant_type=authorization_code&code=${code}&redirect_uri=${redirectUri}`,
+      bodyStr,
       {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -42,9 +51,14 @@ export const getAccessToken = async (code: string) => {
       }
     );
 
+    console.log('✓ Token received successfully');
     return response.data;
   } catch (error) {
-    console.error('eBay token error:', error);
+    console.error('❌ eBay token error:', error instanceof Error ? error.message : error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    }
     throw error;
   }
 };
