@@ -7,7 +7,6 @@ const EBAY_TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
 export const getEbayAuthUrl = () => {
   const clientId = process.env.EBAY_CLIENT_ID;
   const redirectUri = process.env.EBAY_REDIRECT_URI;
-  const ruName = 'Gregory_Gremill-GregoryG-CardTr-fatzsg';
   const scopes = [
     'https://api.ebay.com/oauth/api_scope',
     'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
@@ -22,7 +21,6 @@ export const getEbayAuthUrl = () => {
     response_type: 'code',
     scope: scopes.join(' '),
     state: Math.random().toString(36).substring(7),
-    runame: ruName,
   });
 
   return `${EBAY_AUTH_URL}?${params.toString()}`;
