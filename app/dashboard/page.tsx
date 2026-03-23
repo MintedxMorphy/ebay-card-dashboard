@@ -45,17 +45,13 @@ export default function Dashboard() {
           .find((row) => row.startsWith('userId='))
           ?.split('=')[1];
 
-        if (!userIdCookie) {
-          console.log('No userId found, redirecting to login');
-          router.push('/');
-          return;
-        }
+        // Use authenticated userId if available, otherwise use test userId
+        const finalUserId = userIdCookie || 'gabriel_ebay_account';
+        setUserId(finalUserId);
+        console.log('Using userId:', finalUserId);
 
-        setUserId(userIdCookie);
-        console.log('Authenticated as:', userIdCookie);
-
-        // Fetch real stats for authenticated user
-        const response = await fetch(`/api/transactions/stats?userId=${userIdCookie}`);
+        // Fetch real stats for this user
+        const response = await fetch(`/api/transactions/stats?userId=${finalUserId}`);
 
         if (!response.ok) {
           throw new Error('Failed to load dashboard');
