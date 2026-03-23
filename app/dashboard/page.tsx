@@ -27,20 +27,39 @@ interface Stats {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const checkAuthAndFetchStats = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/transactions/stats');
-        
+
+        // Check if user is authenticated
+        const userIdCookie = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('userId='))
+          ?.split('=')[1];
+
+        if (!userIdCookie) {
+          console.log('No userId found, redirecting to login');
+          router.push('/');
+          return;
+        }
+
+        setUserId(userIdCookie);
+        console.log('Authenticated as:', userIdCookie);
+
+        // Fetch real stats for authenticated user
+        const response = await fetch(`/api/transactions/stats?userId=${userIdCookie}`);
+
         if (!response.ok) {
           throw new Error('Failed to load dashboard');
         }
-        
+
         const data = await response.json();
         setStats(data);
         setError(null);
@@ -52,8 +71,8 @@ export default function Dashboard() {
       }
     };
 
-    fetchStats();
-  }, []);
+    checkAuthAndFetchStats();
+  }, [router]);
 
   if (loading) {
     return (

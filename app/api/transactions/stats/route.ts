@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -8,16 +8,28 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase credentials');
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createClient(supabaseUrl!, supabaseKey!);
 
-    // Fetch all transactions for demo user
+    // Get userId from query params
+    const userId = request.nextUrl.searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'userId parameter required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Fetching transactions for userId:', userId);
+
+    // Fetch all transactions for this user
     const { data: transactions, error } = await supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', '550e8400-e29b-41d4-a716-446655440000')
-      .order('transaction_date', { ascending: false });
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Supabase error:', error);

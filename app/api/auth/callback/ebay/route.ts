@@ -18,20 +18,73 @@ export async function GET(request: NextRequest) {
   try {
     // Exchange code for access token
     const tokenData = await getAccessToken(code);
-
-    // Store token in session/database
-    // For now, we'll redirect with the token (in production, use secure storage)
-    const response = NextResponse.redirect(new URL('/dashboard', request.url));
-    response.cookies.set('ebay_access_token', tokenData.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: tokenData.expires_in,
+    console.log('Token data received:', {
+      access_token: tokenData.access_token?.substring(0, 20) + '...',
+      expires_in: tokenData.expires_in,
     });
 
+    // Use a fixed userId for single-user setup (Gabriel)
+    const userId = 'gabriel_ebay_account';
+    const accessToken = tokenData.access_token;
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+
+    // Store token in Supabase
+    const { error: dbError } = await supabase
+      .from('users')
+      .upsert(
+        {
+          user_id: userId,
+          ebay_access_token: accessToken,
+          token_expires_at: expiresAt,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (dbError) {
+      console.error('Supabase user store error:', dbError);
+      return NextResponse.redirect(new URL('/?error=db_error', request.url));
+    }
+
+    console.log('User token stored for:', userId);
+
+    // Auto-sync transactions
+    console.log('Calling transaction sync...');
+    try {
+      const syncResponse = await fetch(
+        new URL('/api/transactions/sync', request.url),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken: accessToken,
+            userId: userId,
+          }),
+        }
+      );
+
+      const syncData = await syncResponse.json();
+      console.log('Sync result:', syncData);
+    } catch (syncError) {
+      console.error('Transaction sync error:', syncError);
+      // Don't fail — still redirect to dashboard even if sync fails
+    }
+
+    // Redirect to dashboard
+    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+    
+    // Also store userId in cookie for client-side reference
+    response.cookies.set('userId', userId, {
+      httpOnly: false, // Allow JavaScript to read it
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+    });
+
+    console.log('Redirecting to dashboard');
     return response;
   } catch (error) {
     console.error('OAuth callback error:', error);
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url));
+    return NextResponse.redirect(new URL(`/?error=auth_failed&msg=${encodeURIComponent(error instanceof Error ? error.message : 'Unknown error')}`, request.url));
   }
 }
