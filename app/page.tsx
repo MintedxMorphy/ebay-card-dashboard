@@ -66,26 +66,17 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          {/* CTA Button */}
+          <div className="pt-4">
             <a
               href="/api/auth/ebay"
-              className="px-10 py-4 border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold text-base uppercase tracking-widest hover:bg-[#ff006e] hover:text-black transition duration-300 text-center"
+              className="inline-block px-10 py-4 border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold text-base uppercase tracking-widest hover:bg-[#ff006e] hover:text-black transition duration-300"
               style={{
                 boxShadow: '0 0 20px rgba(255, 0, 110, 0.4), inset 0 0 20px rgba(255, 0, 110, 0.1)',
               }}
             >
               ◆ Login with eBay
             </a>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-10 py-4 border-2 border-[#00ff41] text-[#00ff41] font-mono font-bold text-base uppercase tracking-widest hover:bg-[#00ff41] hover:text-black transition duration-300"
-              style={{
-                boxShadow: '0 0 20px rgba(0, 255, 65, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.1)',
-              }}
-            >
-              → Demo Dashboard
-            </button>
           </div>
 
           {/* Info terminal */}
@@ -94,10 +85,10 @@ export default function Home() {
               <span className="text-[#00ff41]">{'>>>'}</span> eBay OAuth configured
             </div>
             <div>
-              <span className="text-[#ff006e]">{'[!]'}</span> Login with eBay for real sales data
+              <span className="text-[#ff006e]">{'[!]'}</span> Authorize to sync your real sales data
             </div>
             <div>
-              <span className="text-[#00ff41]">{'✓'}</span> Demo mode available without login
+              <span className="text-[#00ff41]">{'✓'}</span> Real data. Real insights. Real profits.
             </div>
           </div>
 
