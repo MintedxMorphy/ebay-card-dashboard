@@ -29,15 +29,17 @@
 
 ## eBay Configuration
 
-### Status: PENDING
-- Client ID: `[TO BE PROVIDED BY GABRIEL]`
-- Client Secret: `[TO BE PROVIDED BY GABRIEL]`
-- Redirect URI: `https://ebay-card-dashboard.vercel.app/api/auth/callback/ebay`
+### Status: ✅ ACTIVE (Sandbox)
+- **App ID (Client ID):** [Stored in .env.local + Vercel]
+- **Cert ID (Client Secret):** [Stored in .env.local + Vercel]
+- **Redirect URI:** `https://ebay-card-dashboard.vercel.app/api/auth/callback/ebay`
+- **Environment:** Sandbox (SBX prefix = safe for testing)
+- **Note:** Credentials stored securely, not in git
 
-Once eBay credentials are received, update:
-1. `.env.local` (local development)
-2. Vercel environment variables
-3. eBay Developer Portal (redirect URI)
+### Deployment Status
+- ✅ `.env.local` updated (local development)
+- ⏳ Vercel environment variables (pending manual add - see VERCEL_EBAY_SETUP.md)
+- ✅ eBay Developer Portal (configured)
 
 ---
 
