@@ -66,25 +66,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          {/* CTA Button */}
+          <div className="pt-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-8 py-3 border-2 border-[#00ff41] text-[#00ff41] font-mono font-bold text-sm uppercase tracking-widest hover:bg-[#00ff41] hover:text-black transition duration-300"
+              className="px-10 py-4 border-2 border-[#00ff41] text-[#00ff41] font-mono font-bold text-base uppercase tracking-widest hover:bg-[#00ff41] hover:text-black transition duration-300"
               style={{
-                boxShadow: '0 0 15px rgba(0, 255, 65, 0.3), inset 0 0 15px rgba(0, 255, 65, 0.1)',
+                boxShadow: '0 0 20px rgba(0, 255, 65, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.1)',
               }}
             >
               → Execute Dashboard
-            </button>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-8 py-3 border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold text-sm uppercase tracking-widest hover:bg-[#ff006e] hover:text-black transition duration-300"
-              style={{
-                boxShadow: '0 0 15px rgba(255, 0, 110, 0.3), inset 0 0 15px rgba(255, 0, 110, 0.1)',
-              }}
-            >
-              ◆ View Data
             </button>
           </div>
 
