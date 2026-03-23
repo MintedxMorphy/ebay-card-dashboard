@@ -6,7 +6,7 @@ const EBAY_TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
 
 export const getEbayAuthUrl = () => {
   const clientId = process.env.EBAY_CLIENT_ID;
-  const redirectUri = process.env.EBAY_REDIRECT_URI;
+  const redirectUri = process.env.EBAY_REDIRECT_URI; // This should be the RuName, not the callback URL
   const scopes = [
     'https://api.ebay.com/oauth/api_scope',
     'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
@@ -17,7 +17,7 @@ export const getEbayAuthUrl = () => {
 
   const params = new URLSearchParams({
     client_id: clientId || '',
-    redirect_uri: redirectUri || '',
+    redirect_uri: redirectUri || '', // eBay uses RuName here, not the callback URL
     response_type: 'code',
     scope: scopes.join(' '),
     state: Math.random().toString(36).substring(7),
