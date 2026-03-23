@@ -57,10 +57,13 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="fixed inset-0 opacity-5 pointer-events-none" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.1) 2px, rgba(0, 255, 65, 0.1) 4px)',
+        }}></div>
+        <div className="relative z-10 text-center">
           <div className="text-4xl mb-4 animate-spin">⚡</div>
-          <p className="text-purple-300 text-xl">Loading your card empire...</p>
+          <p className="text-[#00ff41] text-xl font-mono">Loading your card empire...</p>
         </div>
       </div>
     );
@@ -68,10 +71,13 @@ export default function Dashboard() {
 
   if (error || !stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="fixed inset-0 opacity-5 pointer-events-none" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.1) 2px, rgba(0, 255, 65, 0.1) 4px)',
+        }}></div>
+        <div className="relative z-10 text-center">
           <div className="text-4xl mb-4">⚠️</div>
-          <p className="text-red-400 text-xl">{error || 'Failed to load dashboard'}</p>
+          <p className="text-[#ff006e] text-xl font-mono">{error || 'Failed to load dashboard'}</p>
           <p className="text-gray-400 text-sm mt-4">Try refreshing the page</p>
         </div>
       </div>
@@ -79,16 +85,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
+    <div className="min-h-screen bg-black relative">
+      {/* Scanline effect */}
+      <div className="fixed inset-0 opacity-5 pointer-events-none" style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.1) 2px, rgba(0, 255, 65, 0.1) 4px)',
+      }}></div>
+
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+      <main className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 mb-2">
+          <h1 className="text-5xl md:text-6xl font-black text-[#00ff41] mb-2 font-mono" style={{
+            textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
+          }}>
             Your Card Empire 💰
           </h1>
-          <p className="text-gray-300 text-lg">
+          <p className="text-gray-300 text-lg font-mono">
             Track every buy and sell. Dominate the card economy.
           </p>
         </div>
@@ -100,20 +113,26 @@ export default function Dashboard() {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="rounded-xl bg-slate-900/50 border border-purple-500/30 p-6 backdrop-blur">
-            <h2 className="text-2xl font-bold text-purple-300 mb-6">Profit Over Time 📈</h2>
+          <div className="rounded-xl bg-black border border-[#00ff41]/30 p-6" style={{
+            boxShadow: '0 0 15px rgba(0, 255, 65, 0.1)'
+          }}>
+            <h2 className="text-2xl font-bold text-[#00ff41] mb-6 font-mono">Profit Over Time 📈</h2>
             <ProfitChart transactions={stats.transactions} />
           </div>
           
-          <div className="rounded-xl bg-slate-900/50 border border-purple-500/30 p-6 backdrop-blur">
-            <h2 className="text-2xl font-bold text-purple-300 mb-6">Category Breakdown 🏆</h2>
+          <div className="rounded-xl bg-black border border-[#ff006e]/30 p-6" style={{
+            boxShadow: '0 0 15px rgba(255, 0, 110, 0.1)'
+          }}>
+            <h2 className="text-2xl font-bold text-[#ff006e] mb-6 font-mono">Category Breakdown 🏆</h2>
             <CategoryBreakdown stats={stats} />
           </div>
         </div>
 
         {/* Recent Transactions */}
-        <div className="rounded-xl bg-slate-900/50 border border-purple-500/30 p-6 backdrop-blur">
-          <h2 className="text-2xl font-bold text-purple-300 mb-6">Recent Transactions 🃏</h2>
+        <div className="rounded-xl bg-black border border-[#00ff41]/30 p-6" style={{
+          boxShadow: '0 0 15px rgba(0, 255, 65, 0.1)'
+        }}>
+          <h2 className="text-2xl font-bold text-[#00ff41] mb-6 font-mono">Recent Transactions 🃏</h2>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {stats.transactions.length === 0 ? (
               <p className="text-gray-400">No transactions yet. Start logging your cards!</p>
@@ -121,23 +140,25 @@ export default function Dashboard() {
               stats.transactions.slice(0, 10).map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-purple-500/20 hover:border-purple-400/50 transition"
+                  className="flex items-center justify-between p-3 rounded-lg bg-black border transition" style={{
+                    borderColor: tx.transaction_type === 'buy' ? 'rgba(255, 0, 110, 0.2)' : 'rgba(0, 255, 65, 0.2)',
+                  }}
                 >
                   <div className="flex-1">
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-white font-mono">
                       {tx.card_name}
                       <span className={`ml-2 text-sm font-bold ${
-                        tx.transaction_type === 'buy' ? 'text-red-400' : 'text-green-400'
+                        tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
                       }`}>
                         {tx.transaction_type === 'buy' ? '🛍️ Bought' : '🎯 Sold'}
                       </span>
                     </p>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-gray-400 font-mono">
                       {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.transaction_date).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className={`text-right font-bold ${
-                    tx.transaction_type === 'buy' ? 'text-red-400' : 'text-green-400'
+                  <div className={`text-right font-bold font-mono ${
+                    tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
                   }`}>
                     {tx.transaction_type === 'buy' ? '-' : '+'}${tx.amount.toFixed(2)}
                   </div>
@@ -148,8 +169,8 @@ export default function Dashboard() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-gray-500 text-sm border-t border-purple-500/20 pt-8">
-          <p>Keep crushing it in the card economy! 🚀</p>
+        <div className="mt-12 text-center text-gray-500 text-sm border-t border-[#00ff41]/20 pt-8">
+          <p className="font-mono">Keep crushing it in the card economy! 🚀</p>
         </div>
       </main>
     </div>

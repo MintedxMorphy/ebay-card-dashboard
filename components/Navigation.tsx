@@ -17,21 +17,28 @@ export default function Navigation({ userId = 'demo_user' }: NavigationProps) {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-slate-900 to-purple-900 border-b border-purple-500/30">
+    <nav className="bg-black border-b border-[#00ff41]/20" style={{
+      boxShadow: '0 0 10px rgba(0, 255, 65, 0.1)'
+    }}>
       <div className="container mx-auto px-4 py-4 flex justify-between items-center max-w-6xl">
         <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition">
           <span className="text-2xl">🎴</span>
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+          <h1 className="text-2xl font-bold text-[#00ff41] font-mono" style={{
+            textShadow: '0 0 10px rgba(0, 255, 65, 0.4)'
+          }}>
             CardTrack
           </h1>
         </Link>
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-400">
-            ID: <span className="text-purple-300">{userId.substring(0, 8)}...</span>
+          <span className="text-sm text-gray-400 font-mono">
+            ID: <span className="text-[#00ff41]">{userId.substring(0, 8)}...</span>
           </span>
           <button
             onClick={handleLogout}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded-lg transition transform hover:scale-105"
+            className="border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold py-2 px-4 hover:bg-[#ff006e] hover:text-black transition"
+            style={{
+              boxShadow: '0 0 10px rgba(255, 0, 110, 0.3)'
+            }}
           >
             Logout
           </button>
