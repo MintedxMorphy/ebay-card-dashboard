@@ -3,6 +3,7 @@ import { getAccessToken } from '@/lib/ebay';
 import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
+  console.log('=== CALLBACK HIT ===', request.url);
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
