@@ -29,7 +29,7 @@ export default function Home() {
             <div className="text-6xl font-mono font-black text-[#00ff41] drop-shadow-lg" style={{
               textShadow: '0 0 20px rgba(0, 255, 65, 0.5), 0 0 40px rgba(255, 0, 110, 0.3)',
             }}>
-              {'> CARDTRACK'}
+              {'> CARDTRACK x GABRIEL'}
             </div>
             <div className="h-px bg-gradient-to-r from-transparent via-[#ff006e] to-transparent"></div>
             <p className="text-xs md:text-sm text-gray-400 font-mono tracking-widest uppercase">
