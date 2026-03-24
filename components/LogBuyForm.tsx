@@ -24,9 +24,16 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
       return;
     }
 
-    const parsedPrice = parseFloat(price);
+    let parsedPrice = parseFloat(price);
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
       setError('Price must be a valid positive number');
+      return;
+    }
+
+    // Validate: if user entered a 4+ digit number without a decimal, they likely meant to include cents
+    // e.g., "5264" was probably meant to be "52.64"
+    if (!price.includes('.') && parsedPrice >= 100) {
+      setError(`Did you mean $${(parsedPrice / 100).toFixed(2)}? If so, enter it as a decimal (e.g., 52.64)`);
       return;
     }
 
