@@ -8,6 +8,7 @@ import CategoryBreakdown from '@/components/CategoryBreakdown';
 import Navigation from '@/components/Navigation';
 import LogBuyForm from '@/components/LogBuyForm';
 import LogSellForm from '@/components/LogSellForm';
+import EditTransactionModal from '@/components/EditTransactionModal';
 
 interface Transaction {
   id: string;
@@ -36,6 +37,8 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [includeOther, setIncludeOther] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -231,7 +234,11 @@ export default function Dashboard() {
               stats.transactions.slice(0, 10).map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-black border transition" style={{
+                  onClick={() => {
+                    setEditingTransaction(tx);
+                    setEditModalOpen(true);
+                  }}
+                  className="flex items-center justify-between p-3 rounded-lg bg-black border transition cursor-pointer hover:opacity-80" style={{
                     borderColor: tx.transaction_type === 'buy' ? 'rgba(255, 0, 110, 0.2)' : 'rgba(0, 255, 65, 0.2)',
                   }}
                 >
@@ -264,6 +271,18 @@ export default function Dashboard() {
           <p className="font-mono">Keep crushing it in the card economy! 🚀</p>
         </div>
       </main>
+
+      {editingTransaction && (
+        <EditTransactionModal
+          transaction={editingTransaction}
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setEditingTransaction(null);
+          }}
+          onSave={refetchStats}
+        />
+      )}
     </div>
   );
 }
