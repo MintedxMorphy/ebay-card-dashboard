@@ -25,11 +25,10 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
     }
 
     const parsedPrice = parseFloat(price);
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setError('Price must be a valid positive number');
+    if (isNaN(parsedPrice)) {
+      setError('Price must be a valid number');
       return;
     }
-    // No additional validation — trust the user with number input validation
 
     setLoading(true);
 
@@ -127,12 +126,12 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="Enter price (e.g. 52.64)"
+                  placeholder="e.g. 52.64"
                   step="0.01"
-                  min="0"
+                  min="0.01"
                   className="w-full bg-black border border-[#ff006e]/50 rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-[#ff006e]"
                 />
-                <p className="text-xs text-gray-400 mt-1">Enter exact amount with cents — e.g. 52.64 not 5264</p>
+                <p className="text-xs text-gray-400 mt-1">Enter full price with decimal — e.g. 52.64</p>
               </div>
 
               <div>
