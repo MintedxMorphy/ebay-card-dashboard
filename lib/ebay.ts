@@ -65,7 +65,8 @@ export const getAccessToken = async (code: string) => {
 
 export const fetchSalesTransactions = async (accessToken: string, limit = 10) => {
   try {
-    const response = await axios.get(
+    // Fetch first page to get total count
+    const firstResponse = await axios.get(
       `${EBAY_API_BASE}/sell/fulfillment/v1/order`,
       {
         headers: {
@@ -74,11 +75,44 @@ export const fetchSalesTransactions = async (accessToken: string, limit = 10) =>
         },
         params: {
           limit,
+          offset: 0,
         },
       }
     );
 
-    return response.data;
+    const totalOrders = firstResponse.data.total || 0;
+    let allOrders = firstResponse.data.orders || [];
+
+    console.log(`[eBay API] First page: ${allOrders.length} orders, total available: ${totalOrders}`);
+
+    // Fetch remaining pages if there are more orders
+    if (totalOrders > limit) {
+      for (let offset = limit; offset < totalOrders; offset += limit) {
+        console.log(`[eBay API] Fetching page with offset ${offset}...`);
+        const pageResponse = await axios.get(
+          `${EBAY_API_BASE}/sell/fulfillment/v1/order`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Language': 'en-US',
+            },
+            params: {
+              limit,
+              offset,
+            },
+          }
+        );
+
+        const pageOrders = pageResponse.data.orders || [];
+        console.log(`[eBay API] Page offset ${offset}: ${pageOrders.length} orders`);
+        allOrders = allOrders.concat(pageOrders);
+      }
+    }
+
+    return {
+      ...firstResponse.data,
+      orders: allOrders,
+    };
   } catch (error) {
     console.error('eBay sales fetch error:', error);
     console.log('eBay errors:', JSON.stringify((error as any)?.response?.data?.errors));

@@ -61,13 +61,11 @@ export async function GET(request: NextRequest) {
       transactions: filteredTransactions,
     };
 
-    if (transactions && transactions.length > 0) {
-      transactions.forEach((tx: any) => {
-        // Skip 'other' category if not included
-        if (!includeOther && tx.card_category === 'other') {
-          return;
-        }
+    console.log(`[STATS] Starting calculation with ${transactions?.length || 0} total transactions, ${filteredTransactions.length} filtered transactions`);
 
+    // Count and calculate stats from FILTERED transactions only (what's actually displayed)
+    if (filteredTransactions && filteredTransactions.length > 0) {
+      filteredTransactions.forEach((tx: any) => {
         if (tx.card_category === 'sports') {
           stats.sports_count++;
           if (tx.transaction_type === 'buy') {
@@ -82,17 +80,12 @@ export async function GET(request: NextRequest) {
           } else {
             stats.pokemon_revenue += tx.amount;
           }
-        } else if (includeOther && tx.card_category === 'other') {
-          // When includeOther is ON, add 'other' items to sports totals
-          stats.sports_count++;
-          if (tx.transaction_type === 'buy') {
-            stats.sports_spent += tx.amount;
-          } else {
-            stats.sports_revenue += tx.amount;
-          }
         }
+        // Note: 'other' category is already excluded from filteredTransactions
       });
     }
+
+    console.log(`[STATS] Final counts - Sports: ${stats.sports_count}, Pokemon: ${stats.pokemon_count}, Total: ${stats.sports_count + stats.pokemon_count}`);
 
     stats.sports_profit = stats.sports_revenue - stats.sports_spent;
     stats.pokemon_profit = stats.pokemon_revenue - stats.pokemon_spent;

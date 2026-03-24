@@ -13,11 +13,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch sales from eBay
+    // Fetch sales from eBay (now with pagination)
     const salesData = await fetchSalesTransactions(accessToken);
     const orders = salesData.orders || [];
+    const totalAvailable = salesData.total || 0;
 
-    console.log(`[SYNC] Found ${orders.length} total orders from eBay for user ${userId}`);
+    console.log(`[SYNC] eBay API returned ${orders.length} orders (${totalAvailable} total available in account)`);
+    console.log(`[SYNC] Processing ${orders.length} orders for user ${userId}`);
 
     // Filter card items and store in Supabase
     const cardTransactions = [];
@@ -76,12 +78,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[SYNC] Processing ${cardTransactions.length} card transactions for user ${userId}`);
+    console.log(`[SYNC] Summary:`);
+    console.log(`  - Total orders processed: ${orders.length}`);
+    console.log(`  - Card transactions ready to insert: ${cardTransactions.length}`);
 
     // Insert transactions with duplicate handling
     // The UNIQUE constraint on (user_id, ebay_order_id) prevents duplicates
     // Duplicates are expected on re-syncs and are safe to ignore
     if (cardTransactions.length > 0) {
+      console.log(`[SYNC] Inserting ${cardTransactions.length} transactions into Supabase...`);
       const { error, data, status } = await supabase
         .from('transactions')
         .insert(cardTransactions);
