@@ -25,10 +25,20 @@ export async function POST(request: NextRequest) {
     const cardTransactions = [];
 
     for (const order of orders) {
+      // Log EVERY order at the start
+      const firstItemTitle = order.lineItems?.[0]?.title || 'NO ITEMS';
+      console.log(`[SYNC] ========== Order ${order.orderId} ==========`);
+      console.log(`[SYNC] Total line items in order: ${(order.lineItems || []).length}`);
+      console.log(`[SYNC] First item title: ${firstItemTitle}`);
+
       const cardLineItems = (order.lineItems || []).filter((item: any) => isCardItem(item.title));
       
       if (cardLineItems.length === 0) {
-        console.log(`[SYNC] Order ${order.orderId}: ${(order.lineItems || []).length} items, none are cards`);
+        console.log(`[SYNC] Order ${order.orderId}: No card items detected (checked all ${(order.lineItems || []).length} items)`);
+        // Log each item that was rejected
+        (order.lineItems || []).forEach((item: any, idx: number) => {
+          console.log(`[SYNC]   Item ${idx}: "${item.title}" - isCardItem returned null`);
+        });
         continue;
       }
 
