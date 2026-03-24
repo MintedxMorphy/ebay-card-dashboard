@@ -254,6 +254,13 @@ export const isCardItem = (title: string, description?: string): 'sports' | 'pok
     '/25',
     '/10',
     '/5',
+    '1/1',
+    'case hit',
+    'sonic boom',
+    'sb-',
+    'sp ',
+    'ssp',
+    'case break',
   ];
 
   // Check sports brands

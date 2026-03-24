@@ -31,30 +31,23 @@ export async function POST(request: NextRequest) {
       console.log(`[SYNC] Total line items in order: ${(order.lineItems || []).length}`);
       console.log(`[SYNC] First item title: ${firstItemTitle}`);
 
-      const cardLineItems = (order.lineItems || []).filter((item: any) => isCardItem(item.title));
-      
-      if (cardLineItems.length === 0) {
-        console.log(`[SYNC] Order ${order.orderId}: No card items detected (checked all ${(order.lineItems || []).length} items)`);
-        // Log each item that was rejected
-        (order.lineItems || []).forEach((item: any, idx: number) => {
-          console.log(`[SYNC]   Item ${idx}: "${item.title}" - isCardItem returned null`);
-        });
-        continue;
-      }
 
-      console.log(`[SYNC] Order ${order.orderId}: Found ${cardLineItems.length} card items`);
 
       // Calculate card sale amount (totalDueSeller minus shipping passthrough)
-      // Distribute equally across card items in this order
       const totalDueSeller = parseFloat(order.paymentSummary?.totalDueSeller?.value || '0');
       const deliveryCost = parseFloat(order.pricingSummary?.deliveryCost?.value || '0');
       const saleAmount = totalDueSeller - deliveryCost;
-      const amountPerItem = saleAmount / cardLineItems.length;
 
-      for (const item of cardLineItems) {
+      // Process ALL items (not just filtered ones) — try Browse API for items that fail initial check
+      const allLineItems = order.lineItems || [];
+      let cardItemsInOrder = 0;
+
+      // First pass: identify all card items (including those needing Browse API)
+      const identifiedCardItems = [];
+      for (const item of allLineItems) {
         let cardType = isCardItem(item.title);
 
-        // If title check failed, try Browse API with Item Specifics (localizedAspects)
+        // If title check failed, ALWAYS try Browse API with Item Specifics (localizedAspects)
         if (!cardType && item.legacyItemId) {
           console.log(`[SYNC] ${item.title} - Title keyword check failed, trying Browse API...`);
           const itemDetails = await getItemDetailsFromBrowseAPI(item.legacyItemId, accessToken);
@@ -74,11 +67,27 @@ export async function POST(request: NextRequest) {
         }
 
         if (cardType) {
-          const finalDate = order.creationDate || new Date().toISOString();
+          identifiedCardItems.push({ item, cardType });
           console.log(`[SYNC] ✅ ACCEPTED: ${item.title}`);
           console.log(`  - Category: ${cardType}`);
-          console.log(`  - Date: ${finalDate}`);
-          
+        } else {
+          console.log(`[SYNC] ❌ REJECTED: ${item.title}`);
+          console.log(`  - Title keyword check: null`);
+          console.log(`  - Browse API check: null`);
+          console.log(`  - Reason: Not identified as sports or pokemon card`);
+        }
+      }
+
+      // Only log summary and insert if we found card items
+      if (identifiedCardItems.length > 0) {
+        console.log(`[SYNC] Order ${order.orderId}: Found ${identifiedCardItems.length} card items out of ${allLineItems.length}`);
+        
+        // Calculate amount per item based on actual card items found
+        const amountPerItem = saleAmount / identifiedCardItems.length;
+
+        // Second pass: add transactions for identified cards
+        for (const { item, cardType } of identifiedCardItems) {
+          const finalDate = order.creationDate || new Date().toISOString();
           cardTransactions.push({
             user_id: userId,
             transaction_type: 'sell',
@@ -88,11 +97,6 @@ export async function POST(request: NextRequest) {
             ebay_order_id: order.orderId,
             transaction_date: finalDate,
           });
-        } else {
-          console.log(`[SYNC] ❌ REJECTED: ${item.title}`);
-          console.log(`  - Title keyword check: null`);
-          console.log(`  - Browse API check: null`);
-          console.log(`  - Reason: Not identified as sports or pokemon card`);
         }
       }
     }
