@@ -105,7 +105,7 @@ export const fetchBuyingHistory = async (accessToken: string) => {
   }
 };
 
-export const isCardItem = (title: string): 'sports' | 'pokemon' | null => {
+export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null => {
   const lowerTitle = title.toLowerCase();
 
   // Pokemon cards
@@ -120,8 +120,15 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | null => {
     return 'pokemon';
   }
 
-  // Sports cards
+  // Sports cards - expanded keywords
   if (
+    lowerTitle.includes('topps') ||
+    lowerTitle.includes('panini') ||
+    lowerTitle.includes('prizm') ||
+    lowerTitle.includes('upper deck') ||
+    lowerTitle.includes('bowman') ||
+    lowerTitle.includes('donruss') ||
+    lowerTitle.includes('fleer') ||
     lowerTitle.includes('graded') ||
     lowerTitle.includes('rookie card') ||
     lowerTitle.includes('autograph') ||
@@ -132,6 +139,11 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | null => {
     lowerTitle.includes('nhl')
   ) {
     return 'sports';
+  }
+
+  // If title contains 'card' but wasn't matched above, classify as 'other'
+  if (lowerTitle.includes('card')) {
+    return 'other';
   }
 
   return null;
