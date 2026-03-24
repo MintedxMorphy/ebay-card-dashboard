@@ -39,12 +39,17 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        // For now, use demo data to avoid auth redirect loop
-        // TODO: Re-enable auth check once callback redirect is fixed
-        const userId = '550e8400-e29b-41d4-a716-446655440000'; // Demo user ID
+        // Read userId from cookie (set by OAuth callback handler)
+        const cookieUserId = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('userId='))
+          ?.split('=')[1];
+
+        // Use authenticated userId if available, otherwise fall back to demo
+        const userId = cookieUserId || '550e8400-e29b-41d4-a716-446655440000';
         setUserId(userId);
 
-        // Fetch stats (demo data for now)
+        // Fetch stats for authenticated user or demo user
         const response = await fetch(`/api/transactions/stats?userId=${userId}`);
 
         if (!response.ok) {
@@ -101,7 +106,7 @@ export default function Dashboard() {
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.1) 2px, rgba(0, 255, 65, 0.1) 4px)',
       }}></div>
 
-      <Navigation />
+      <Navigation userId={userId || 'demo_user'} />
       
       <main className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}

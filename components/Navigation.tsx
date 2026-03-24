@@ -11,7 +11,8 @@ export default function Navigation({ userId = 'demo_user' }: NavigationProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('userId');
+    // Clear cookies
+    document.cookie = 'userId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
     localStorage.removeItem('ebay_token');
     router.push('/');
   };
