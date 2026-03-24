@@ -116,7 +116,7 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="e.g. 52.64"
                   step="0.01"
                   min="0"
                   className="w-full bg-black border border-[#ff006e]/50 rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-[#ff006e]"
