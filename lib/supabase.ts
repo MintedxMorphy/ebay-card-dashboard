@@ -16,12 +16,9 @@ export const supabase = (() => {
 export type Transaction = {
   id: string;
   user_id: string;
-  ebay_transaction_id: string;
-  type: 'buy' | 'sell';
-  card_type: 'sports' | 'pokemon';
-  title: string;
+  transaction_type: 'buy' | 'sell';
+  card_category: 'sports' | 'pokemon';
   amount: number;
-  quantity: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 };

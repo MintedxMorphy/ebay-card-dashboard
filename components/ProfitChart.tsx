@@ -16,7 +16,7 @@ interface Transaction {
   card_category: string;
   transaction_type: string;
   amount: number;
-  transaction_date: string;
+  created_at: string;
 }
 
 interface ProfitChartProps {
@@ -28,7 +28,7 @@ export default function ProfitChart({ transactions }: ProfitChartProps) {
   const dailyData: { [key: string]: { date: string; profit: number; revenue: number; spent: number } } = {};
 
   transactions.forEach((tx) => {
-    const date = new Date(tx.transaction_date).toLocaleDateString('en-US', {
+    const date = new Date(tx.created_at).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });

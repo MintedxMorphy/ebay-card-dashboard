@@ -13,7 +13,7 @@ interface Transaction {
   transaction_type: string;
   amount: number;
   card_name: string;
-  transaction_date: string;
+  created_at: string;
 }
 
 interface Stats {
@@ -169,7 +169,7 @@ export default function Dashboard() {
                       </span>
                     </p>
                     <p className="text-sm text-gray-400 font-mono">
-                      {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.transaction_date).toLocaleDateString()}
+                      {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className={`text-right font-bold font-mono ${
