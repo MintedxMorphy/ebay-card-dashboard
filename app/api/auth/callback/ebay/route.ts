@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAccessToken } from '@/lib/ebay';
 import { supabase } from '@/lib/supabase';
 
-export async function GET(request: NextRequest) {
-  console.log('=== CALLBACK HIT ===', request.url);
-  const searchParams = request.nextUrl.searchParams;
-  const code = searchParams.get('code');
-  const error = searchParams.get('error');
-
+async function handleCallback(code: string | null, error: string | null, isPost: boolean = false) {
   if (error) {
-    return NextResponse.redirect(new URL(`/?error=${error}`, request.url));
+    if (isPost) {
+      return NextResponse.json({ error }, { status: 400 });
+    }
+    return NextResponse.redirect(new URL(`/?error=${error}`, 'https://ebay-card-dashboard.vercel.app'));
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/?error=no_code', request.url));
+    if (isPost) {
+      return NextResponse.json({ error: 'No code provided' }, { status: 400 });
+    }
+    return NextResponse.redirect(new URL('/?error=no_code', 'https://ebay-card-dashboard.vercel.app'));
   }
 
   try {
@@ -44,7 +45,13 @@ export async function GET(request: NextRequest) {
 
     if (dbError) {
       console.error('Supabase user store error:', dbError);
-      return NextResponse.redirect(new URL('/?error=db_error', request.url));
+      if (isPost) {
+        return NextResponse.json(
+          { error: 'Failed to store token' },
+          { status: 500 }
+        );
+      }
+      return NextResponse.redirect(new URL('/?error=db_error', 'https://ebay-card-dashboard.vercel.app'));
     }
 
     console.log('User token stored for:', userId);
@@ -53,7 +60,7 @@ export async function GET(request: NextRequest) {
     console.log('Calling transaction sync...');
     try {
       const syncResponse = await fetch(
-        new URL('/api/transactions/sync', request.url),
+        'https://ebay-card-dashboard.vercel.app/api/transactions/sync',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -68,24 +75,47 @@ export async function GET(request: NextRequest) {
       console.log('Sync result:', syncData);
     } catch (syncError) {
       console.error('Transaction sync error:', syncError);
-      // Don't fail — still redirect to dashboard even if sync fails
     }
 
-    // Redirect to dashboard
-    const response = NextResponse.redirect(new URL('/dashboard', request.url));
-    
-    // Also store userId in cookie for client-side reference
+    // Return success response
+    if (isPost) {
+      return NextResponse.json({ success: true, userId });
+    }
+
+    // Redirect to dashboard on success (GET)
+    const response = NextResponse.redirect(new URL('/dashboard', 'https://ebay-card-dashboard.vercel.app'));
     response.cookies.set('userId', userId, {
-      httpOnly: false, // Allow JavaScript to read it
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365, // 1 year
+      maxAge: 60 * 60 * 24 * 365,
     });
-
-    console.log('Redirecting to dashboard');
     return response;
   } catch (error) {
     console.error('OAuth callback error:', error);
-    return NextResponse.redirect(new URL(`/?error=auth_failed&msg=${encodeURIComponent(error instanceof Error ? error.message : 'Unknown error')}`, request.url));
+    if (isPost) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
+    return NextResponse.redirect(new URL(`/?error=auth_failed`, 'https://ebay-card-dashboard.vercel.app'));
   }
+}
+
+export async function GET(request: NextRequest) {
+  console.log('=== CALLBACK GET HIT ===', request.url);
+  const searchParams = request.nextUrl.searchParams;
+  const code = searchParams.get('code');
+  const error = searchParams.get('error');
+
+  return handleCallback(code, error);
+}
+
+export async function POST(request: NextRequest) {
+  console.log('=== CALLBACK POST HIT ===');
+  const body = await request.json();
+  const { code, error } = body;
+
+  return handleCallback(code, error, true);
 }
