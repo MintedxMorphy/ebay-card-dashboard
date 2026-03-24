@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchSalesTransactions, isCardItem, getItemDetailsFromBrowseAPI } from '@/lib/ebay';
+import { fetchSalesTransactions, isCardItem, getItemDetailsFromBrowseAPI, classifyFromItemSpecifics } from '@/lib/ebay';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
@@ -54,24 +54,30 @@ export async function POST(request: NextRequest) {
       for (const item of cardLineItems) {
         let cardType = isCardItem(item.title);
 
-        // If title check failed, try Browse API with full item description
+        // If title check failed, try Browse API with Item Specifics (localizedAspects)
         if (!cardType && item.legacyItemId) {
-          console.log(`[SYNC] ${item.title} - Initial check failed, trying Browse API...`);
+          console.log(`[SYNC] ${item.title} - Title keyword check failed, trying Browse API...`);
           const itemDetails = await getItemDetailsFromBrowseAPI(item.legacyItemId, accessToken);
           if (itemDetails) {
-            cardType = isCardItem(item.title, itemDetails.description);
-            console.log(`[SYNC] ${item.title} - Browse API result: ${cardType || 'still null'}`);
+            // First try Item Specifics (most reliable)
+            if (itemDetails.localizedAspects && itemDetails.localizedAspects.length > 0) {
+              cardType = classifyFromItemSpecifics(itemDetails.localizedAspects);
+              console.log(`[SYNC] ${item.title} - Item Specifics result: ${cardType || 'no match'}`);
+            }
+            
+            // Fallback to description if Item Specifics didn't classify it
+            if (!cardType && itemDetails.description) {
+              cardType = isCardItem(item.title, itemDetails.description);
+              console.log(`[SYNC] ${item.title} - Description fallback result: ${cardType || 'no match'}`);
+            }
           }
         }
 
         if (cardType) {
           const finalDate = order.creationDate || new Date().toISOString();
-          console.log(`[SYNC] Order ${order.orderId}:`);
-          console.log(`  - Item: ${item.title}`);
+          console.log(`[SYNC] ✅ ACCEPTED: ${item.title}`);
           console.log(`  - Category: ${cardType}`);
-          console.log(`  - order.creationDate value: ${order.creationDate}`);
-          console.log(`  - Final transaction_date being inserted: ${finalDate}`);
-          console.log(`  - Type of creationDate: ${typeof order.creationDate}`);
+          console.log(`  - Date: ${finalDate}`);
           
           cardTransactions.push({
             user_id: userId,
@@ -83,7 +89,10 @@ export async function POST(request: NextRequest) {
             transaction_date: finalDate,
           });
         } else {
-          console.log(`[SYNC] Order ${order.orderId} - ${item.title} - DROPPED (not identified as card)`);
+          console.log(`[SYNC] ❌ REJECTED: ${item.title}`);
+          console.log(`  - Title keyword check: null`);
+          console.log(`  - Browse API check: null`);
+          console.log(`  - Reason: Not identified as sports or pokemon card`);
         }
       }
     }

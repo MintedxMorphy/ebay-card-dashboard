@@ -139,7 +139,7 @@ export const fetchBuyingHistory = async (accessToken: string) => {
   }
 };
 
-export const getItemDetailsFromBrowseAPI = async (itemId: string, accessToken: string): Promise<{ description: string; category: string } | null> => {
+export const getItemDetailsFromBrowseAPI = async (itemId: string, accessToken: string): Promise<{ description: string; category: string; localizedAspects: any[] } | null> => {
   try {
     // Use the Browse API to fetch full item details
     const response = await fetch(
@@ -158,14 +158,62 @@ export const getItemDetailsFromBrowseAPI = async (itemId: string, accessToken: s
     }
 
     const data = await response.json();
+    console.log(`[Browse API] Item ${itemId} - localizedAspects:`, JSON.stringify(data.localizedAspects, null, 2));
+    
     return {
       description: data.description || '',
       category: data.categoryPath || '',
+      localizedAspects: data.localizedAspects || [],
     };
   } catch (error) {
     console.error(`[Browse API] Error fetching ${itemId}:`, error);
     return null;
   }
+};
+
+export const classifyFromItemSpecifics = (localizedAspects: any[]): 'sports' | 'pokemon' | null => {
+  if (!localizedAspects || localizedAspects.length === 0) {
+    return null;
+  }
+
+  // Create a map for easier lookup
+  const aspects = new Map();
+  for (const aspect of localizedAspects) {
+    const name = aspect.name?.toLowerCase() || '';
+    const value = aspect.value?.[0]?.toLowerCase() || '';
+    aspects.set(name, value);
+  }
+
+  console.log(`[ItemSpecifics] Parsed aspects:`, Object.fromEntries(aspects));
+
+  // Check for Pokemon first
+  const type = aspects.get('type') || '';
+  const game = aspects.get('game') || '';
+
+  if (type.includes('pokémon') || type.includes('pokemon') || game.includes('pokémon') || game.includes('pokemon')) {
+    console.log(`[ItemSpecifics] Classified as POKEMON (Type: "${type}", Game: "${game}")`);
+    return 'pokemon';
+  }
+
+  // Check for Sports
+  if (
+    type.includes('sports trading card') ||
+    type.includes('trading card') ||
+    type.includes('sports trading cards') ||
+    aspects.has('sport') // If Sport aspect exists, it's a sports card
+  ) {
+    console.log(`[ItemSpecifics] Classified as SPORTS (Type: "${type}", Sport aspect exists)`);
+    return 'sports';
+  }
+
+  // Check other common sports indicators
+  const category = aspects.get('category') || '';
+  if (category.includes('sports trading cards')) {
+    console.log(`[ItemSpecifics] Classified as SPORTS (Category: "${category}")`);
+    return 'sports';
+  }
+
+  return null;
 };
 
 export const isCardItem = (title: string, description?: string): 'sports' | 'pokemon' | 'other' | null => {
