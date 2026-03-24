@@ -39,14 +39,8 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        // Read userId from cookie (set by OAuth callback handler)
-        const cookieUserId = document.cookie
-          .split('; ')
-          .find((row) => row.startsWith('userId='))
-          ?.split('=')[1];
-
-        // Use authenticated userId if available, otherwise fall back to demo
-        const userId = cookieUserId || '550e8400-e29b-41d4-a716-446655440000';
+        // Use fixed userId for Gabriel's account (matches users table and sync)
+        const userId = 'gabriel_ebay_account';
         setUserId(userId);
 
         // Fetch stats for authenticated user or demo user
