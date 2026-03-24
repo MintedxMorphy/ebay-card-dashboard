@@ -255,7 +255,7 @@ export default function Dashboard() {
                       </span>
                     </p>
                     <p className="text-sm text-gray-400 font-mono">
-                      {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.created_at).toLocaleDateString()}
+                      {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.transaction_date).toLocaleDateString()}
                     </p>
                   </div>
                   <div className={`text-right font-bold font-mono ${

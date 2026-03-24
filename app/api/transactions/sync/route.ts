@@ -53,7 +53,14 @@ export async function POST(request: NextRequest) {
         }
 
         if (cardType) {
-          console.log(`[SYNC] Order ${order.orderId} - ${item.title} - Category: ${cardType} - Storing date: ${order.creationDate || 'NULL (using NOW())'}`);
+          const finalDate = order.creationDate || new Date().toISOString();
+          console.log(`[SYNC] Order ${order.orderId}:`);
+          console.log(`  - Item: ${item.title}`);
+          console.log(`  - Category: ${cardType}`);
+          console.log(`  - order.creationDate value: ${order.creationDate}`);
+          console.log(`  - Final transaction_date being inserted: ${finalDate}`);
+          console.log(`  - Type of creationDate: ${typeof order.creationDate}`);
+          
           cardTransactions.push({
             user_id: userId,
             transaction_type: 'sell',
@@ -61,7 +68,7 @@ export async function POST(request: NextRequest) {
             amount: amountPerItem,
             card_name: item.title,
             ebay_order_id: order.orderId,
-            transaction_date: order.creationDate || new Date().toISOString(),
+            transaction_date: finalDate,
           });
         } else {
           console.log(`[SYNC] Order ${order.orderId} - ${item.title} - DROPPED (not identified as card)`);

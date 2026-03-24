@@ -25,6 +25,14 @@ export async function POST(request: NextRequest) {
 
     // Insert transaction into Supabase
     // Note: created_at will auto-set if not provided, so we use transaction_date for the manual date
+    const transactionDate = created_at;
+    console.log(`[CREATE] About to insert:`);
+    console.log(`  - card_name: ${card_name}`);
+    console.log(`  - transaction_type: ${transaction_type}`);
+    console.log(`  - amount: ${amount}`);
+    console.log(`  - created_at from request: ${created_at}`);
+    console.log(`  - transaction_date value being inserted: ${transactionDate}`);
+
     const { data, error } = await supabase
       .from('transactions')
       .insert([
@@ -33,7 +41,7 @@ export async function POST(request: NextRequest) {
           card_name: card_name,
           card_category: card_category,
           amount: parseFloat(amount),
-          transaction_date: created_at, // Store user's date as transaction_date
+          transaction_date: transactionDate, // Store user's date as transaction_date
           transaction_type: transaction_type,
           // ebay_order_id is null for manual entries (no eBay order associated)
         },
