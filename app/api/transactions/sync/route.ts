@@ -21,17 +21,25 @@ export async function POST(request: NextRequest) {
     const cardTransactions = [];
 
     for (const order of orders) {
-      for (const item of order.lineItems || []) {
+      const cardLineItems = (order.lineItems || []).filter((item: any) => isCardItem(item.title));
+      
+      if (cardLineItems.length === 0) continue;
+
+      // Use the net amount Gabriel received (paymentSummary.totalDueSeller)
+      // Distribute equally across card items in this order
+      const totalDueSeller = parseFloat(order.paymentSummary?.totalDueSeller?.value || '0');
+      const amountPerItem = totalDueSeller / cardLineItems.length;
+
+      for (const item of cardLineItems) {
         const cardType = isCardItem(item.title);
 
         if (cardType) {
-          const amount = parseFloat(item.lineItemCost?.value || '0');
-          
           cardTransactions.push({
             user_id: userId,
             transaction_type: 'sell',
             card_category: cardType,
-            amount: amount,
+            amount: amountPerItem,
+            card_name: item.title,
           });
         }
       }

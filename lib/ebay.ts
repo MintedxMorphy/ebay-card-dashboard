@@ -108,19 +108,7 @@ export const fetchBuyingHistory = async (accessToken: string) => {
 export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null => {
   const lowerTitle = title.toLowerCase();
 
-  // Pokemon cards
-  if (
-    lowerTitle.includes('pokemon') ||
-    lowerTitle.includes('charizard') ||
-    lowerTitle.includes('pikachu') ||
-    lowerTitle.includes('psa') ||
-    lowerTitle.includes('bgvg') ||
-    lowerTitle.includes('tcg')
-  ) {
-    return 'pokemon';
-  }
-
-  // Sports cards - expanded keywords
+  // Sports cards - CHECK FIRST (Panini Prizm should be sports, not pokemon)
   if (
     lowerTitle.includes('topps') ||
     lowerTitle.includes('panini') ||
@@ -139,6 +127,18 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null
     lowerTitle.includes('nhl')
   ) {
     return 'sports';
+  }
+
+  // Pokemon cards - check after sports to avoid false positives
+  if (
+    lowerTitle.includes('pokemon') ||
+    lowerTitle.includes('charizard') ||
+    lowerTitle.includes('pikachu') ||
+    lowerTitle.includes('psa') ||
+    lowerTitle.includes('bgvg') ||
+    lowerTitle.includes('tcg')
+  ) {
+    return 'pokemon';
   }
 
   // If title contains 'card' but wasn't matched above, classify as 'other'

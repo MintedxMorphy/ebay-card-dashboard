@@ -6,6 +6,7 @@ import StatsCards from '@/components/StatsCards';
 import ProfitChart from '@/components/ProfitChart';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import Navigation from '@/components/Navigation';
+import LogBuyForm from '@/components/LogBuyForm';
 
 interface Transaction {
   id: string;
@@ -101,6 +102,26 @@ export default function Dashboard() {
     }
   };
 
+  const refetchStats = async () => {
+    try {
+      const userId = 'gabriel_ebay_account';
+      const response = await fetch(`/api/transactions/stats?userId=${userId}&includeOther=${includeOther}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load dashboard');
+      }
+      
+      const data = await response.json();
+      if (!data.transactions) {
+        data.transactions = [];
+      }
+      
+      setStats(data);
+    } catch (err) {
+      console.error('Error refetching stats:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -153,21 +174,24 @@ export default function Dashboard() {
                 Track every buy and sell. Dominate the card economy.
               </p>
             </div>
-            <button
-              onClick={handleToggleOther}
-              className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition ${
-                includeOther
-                  ? 'border-[#00ff41] text-[#00ff41] bg-[#00ff41]/10'
-                  : 'border-[#ff006e] text-[#ff006e] bg-[#ff006e]/10'
-              }`}
-              style={{
-                boxShadow: includeOther
-                  ? '0 0 10px rgba(0, 255, 65, 0.3)'
-                  : '0 0 10px rgba(255, 0, 110, 0.3)'
-              }}
-            >
-              {includeOther ? '✓ Include Other' : '◆ Cards Only'}
-            </button>
+            <div className="flex gap-3">
+              <LogBuyForm onBuyAdded={refetchStats} />
+              <button
+                onClick={handleToggleOther}
+                className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition ${
+                  includeOther
+                    ? 'border-[#00ff41] text-[#00ff41] bg-[#00ff41]/10'
+                    : 'border-[#ff006e] text-[#ff006e] bg-[#ff006e]/10'
+                }`}
+                style={{
+                  boxShadow: includeOther
+                    ? '0 0 10px rgba(0, 255, 65, 0.3)'
+                    : '0 0 10px rgba(255, 0, 110, 0.3)'
+                }}
+              >
+                {includeOther ? '✓ Include Other' : '◆ Cards Only'}
+              </button>
+            </div>
           </div>
         </div>
 
