@@ -7,6 +7,7 @@ import ProfitChart from '@/components/ProfitChart';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import Navigation from '@/components/Navigation';
 import LogBuyForm from '@/components/LogBuyForm';
+import LogSellForm from '@/components/LogSellForm';
 
 interface Transaction {
   id: string;
@@ -174,8 +175,9 @@ export default function Dashboard() {
                 Track every buy and sell. Dominate the card economy.
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap justify-end">
               <LogBuyForm onBuyAdded={refetchStats} />
+              <LogSellForm onSellAdded={refetchStats} />
               <button
                 onClick={handleToggleOther}
                 className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition ${
