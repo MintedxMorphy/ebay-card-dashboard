@@ -17,6 +17,7 @@ interface Transaction {
   transaction_type: string;
   amount: number;
   created_at: string;
+  transaction_date: string;
 }
 
 interface ProfitChartProps {
@@ -27,11 +28,16 @@ export default function ProfitChart({ transactions }: ProfitChartProps) {
   // Process transactions into daily data
   const dailyData: { [key: string]: { date: string; profit: number; revenue: number; spent: number } } = {};
 
+  console.log('[ProfitChart] Processing transactions:', transactions);
+
   transactions.forEach((tx) => {
-    const date = new Date(tx.created_at).toLocaleDateString('en-US', {
+    // Use transaction_date (actual date of transaction) not created_at (insertion date)
+    const transactionDate = tx.transaction_date || tx.created_at;
+    const date = new Date(transactionDate).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
+    console.log(`[ProfitChart] ${tx.card_name} (${tx.transaction_type}): ${transactionDate} -> ${date}`);
 
     if (!dailyData[date]) {
       dailyData[date] = { date, profit: 0, revenue: 0, spent: 0 };

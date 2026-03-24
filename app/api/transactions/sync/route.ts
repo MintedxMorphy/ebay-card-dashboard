@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         const cardType = isCardItem(item.title);
 
         if (cardType) {
+          console.log(`[SYNC] Order ${order.orderId} - ${item.title} - Storing date: ${order.creationDate || 'NULL (using NOW())'}`);
           cardTransactions.push({
             user_id: userId,
             transaction_type: 'sell',

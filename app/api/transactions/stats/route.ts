@@ -52,9 +52,11 @@ export async function GET(request: NextRequest) {
       sports_spent: 0,
       sports_revenue: 0,
       sports_profit: 0,
+      sports_count: 0, // Track actual transaction count
       pokemon_spent: 0,
       pokemon_revenue: 0,
       pokemon_profit: 0,
+      pokemon_count: 0, // Track actual transaction count
       total_profit: 0,
       transactions: filteredTransactions,
     };
@@ -67,12 +69,14 @@ export async function GET(request: NextRequest) {
         }
 
         if (tx.card_category === 'sports') {
+          stats.sports_count++;
           if (tx.transaction_type === 'buy') {
             stats.sports_spent += tx.amount;
           } else {
             stats.sports_revenue += tx.amount;
           }
         } else if (tx.card_category === 'pokemon') {
+          stats.pokemon_count++;
           if (tx.transaction_type === 'buy') {
             stats.pokemon_spent += tx.amount;
           } else {
@@ -80,6 +84,7 @@ export async function GET(request: NextRequest) {
           }
         } else if (includeOther && tx.card_category === 'other') {
           // When includeOther is ON, add 'other' items to sports totals
+          stats.sports_count++;
           if (tx.transaction_type === 'buy') {
             stats.sports_spent += tx.amount;
           } else {

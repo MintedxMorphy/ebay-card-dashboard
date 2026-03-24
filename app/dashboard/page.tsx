@@ -215,7 +215,7 @@ export default function Dashboard() {
             boxShadow: '0 0 15px rgba(255, 0, 110, 0.1)'
           }}>
             <h2 className="text-2xl font-bold text-[#ff006e] mb-6 font-mono">Category Breakdown 🏆</h2>
-            <CategoryBreakdown stats={stats} />
+            <CategoryBreakdown stats={stats} transactions={stats.transactions} />
           </div>
         </div>
 

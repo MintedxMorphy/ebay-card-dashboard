@@ -6,6 +6,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, card_name, card_category, amount, created_at, transaction_type } = body;
 
+    console.log(`[CREATE] Request body received:`, {
+      userId,
+      card_name,
+      card_category,
+      amount,
+      created_at,
+      transaction_type,
+      fullBody: body,
+    });
+
     if (!userId || !card_name || !card_category || amount === undefined || !transaction_type) {
       return NextResponse.json(
         { error: 'Missing required fields' },

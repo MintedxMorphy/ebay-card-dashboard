@@ -2,18 +2,30 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+interface Transaction {
+  id: string;
+  card_category: string;
+  transaction_type: string;
+  amount: number;
+  card_name: string;
+  created_at: string;
+}
+
 interface CategoryBreakdownProps {
   stats: {
     sports_spent: number;
     sports_revenue: number;
     sports_profit: number;
+    sports_count?: number;
     pokemon_spent: number;
     pokemon_revenue: number;
     pokemon_profit: number;
+    pokemon_count?: number;
   };
+  transactions?: Transaction[];
 }
 
-export default function CategoryBreakdown({ stats }: CategoryBreakdownProps) {
+export default function CategoryBreakdown({ stats, transactions }: CategoryBreakdownProps) {
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
   const data = [
@@ -31,8 +43,9 @@ export default function CategoryBreakdown({ stats }: CategoryBreakdownProps) {
     },
   ];
 
-  const sportsItems = Math.round(stats.sports_spent / 50); // Estimate based on avg card price
-  const pokemonItems = Math.round(stats.pokemon_spent / 40);
+  // Count actual items per category
+  const sportsItems = transactions?.filter((tx) => tx.card_category === 'sports').length || 0;
+  const pokemonItems = transactions?.filter((tx) => tx.card_category === 'pokemon').length || 0;
 
   return (
     <div className="w-full">

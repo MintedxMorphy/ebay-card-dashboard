@@ -29,10 +29,21 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
       setError('Price must be a valid positive number');
       return;
     }
+    // No additional validation — trust the user with number input validation
 
     setLoading(true);
 
     try {
+      console.log('[LogBuyForm] Submitting:', {
+        userId: 'gabriel_ebay_account',
+        card_name: cardName,
+        card_category: category,
+        amount: parsedPrice,
+        created_at: new Date(date).toISOString(),
+        transaction_type: 'buy',
+        datePickerValue: date,
+      });
+
       const response = await fetch('/api/transactions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
