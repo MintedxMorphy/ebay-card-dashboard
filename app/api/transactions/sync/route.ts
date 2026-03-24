@@ -25,10 +25,12 @@ export async function POST(request: NextRequest) {
       
       if (cardLineItems.length === 0) continue;
 
-      // Use the net amount Gabriel received (paymentSummary.totalDueSeller)
+      // Calculate card sale amount (totalDueSeller minus shipping passthrough)
       // Distribute equally across card items in this order
       const totalDueSeller = parseFloat(order.paymentSummary?.totalDueSeller?.value || '0');
-      const amountPerItem = totalDueSeller / cardLineItems.length;
+      const deliveryCost = parseFloat(order.pricingSummary?.deliveryCost?.value || '0');
+      const saleAmount = totalDueSeller - deliveryCost;
+      const amountPerItem = saleAmount / cardLineItems.length;
 
       for (const item of cardLineItems) {
         const cardType = isCardItem(item.title);
