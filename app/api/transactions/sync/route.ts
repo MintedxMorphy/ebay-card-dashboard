@@ -27,12 +27,9 @@ export async function POST(request: NextRequest) {
         if (cardType) {
           cardTransactions.push({
             user_id: userId,
-            ebay_transaction_id: order.orderId,
-            type: 'sell',
-            card_type: cardType,
-            title: item.title,
+            transaction_type: 'sell',
+            card_category: cardType,
             amount: parseFloat(item.lineItemPrice?.value || '0'),
-            quantity: item.quantity,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
