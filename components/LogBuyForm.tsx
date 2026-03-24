@@ -24,16 +24,9 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
       return;
     }
 
-    let parsedPrice = parseFloat(price);
+    const parsedPrice = parseFloat(price);
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
       setError('Price must be a valid positive number');
-      return;
-    }
-
-    // Validate: if user entered a 4+ digit number without a decimal, they likely meant to include cents
-    // e.g., "5264" was probably meant to be "52.64"
-    if (!price.includes('.') && parsedPrice >= 100) {
-      setError(`Did you mean $${(parsedPrice / 100).toFixed(2)}? If so, enter it as a decimal (e.g., 52.64)`);
       return;
     }
 
@@ -123,11 +116,12 @@ export default function LogBuyForm({ onBuyAdded }: LogBuyFormProps) {
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="e.g. 52.64"
+                  placeholder="Enter price (e.g. 52.64)"
                   step="0.01"
                   min="0"
                   className="w-full bg-black border border-[#ff006e]/50 rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-[#ff006e]"
                 />
+                <p className="text-xs text-gray-400 mt-1">Enter exact amount with cents — e.g. 52.64 not 5264</p>
               </div>
 
               <div>

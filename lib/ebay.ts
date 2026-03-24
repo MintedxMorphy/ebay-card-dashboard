@@ -109,23 +109,49 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null
   const lowerTitle = title.toLowerCase();
 
   // Sports cards - CHECK FIRST (Panini Prizm should be sports, not pokemon)
-  if (
-    lowerTitle.includes('topps') ||
-    lowerTitle.includes('panini') ||
-    lowerTitle.includes('prizm') ||
-    lowerTitle.includes('upper deck') ||
-    lowerTitle.includes('bowman') ||
-    lowerTitle.includes('donruss') ||
-    lowerTitle.includes('fleer') ||
-    lowerTitle.includes('graded') ||
-    lowerTitle.includes('rookie card') ||
-    lowerTitle.includes('autograph') ||
-    lowerTitle.includes('sports card') ||
-    lowerTitle.includes('nfl') ||
-    lowerTitle.includes('nba') ||
-    lowerTitle.includes('mlb') ||
-    lowerTitle.includes('nhl')
-  ) {
+  const sportsBrands = [
+    'topps',
+    'panini',
+    'prizm',
+    'upper deck',
+    'bowman',
+    'donruss',
+    'fleer',
+    'graded',
+    'nfl',
+    'nba',
+    'mlb',
+    'nhl',
+    'sports card',
+  ];
+
+  const sportsKeywords = [
+    'rookie',
+    'rookie card',
+    'rc',
+    'refractor',
+    'holo',
+    'holographic',
+    'chrome',
+    'parallel',
+    'auto',
+    'autograph',
+    'autographed',
+    'patch',
+    '/99',
+    '/50',
+    '/25',
+    '/10',
+    '/5',
+  ];
+
+  // Check sports brands
+  if (sportsBrands.some(brand => lowerTitle.includes(brand))) {
+    return 'sports';
+  }
+
+  // Check sports-specific keywords
+  if (sportsKeywords.some(keyword => lowerTitle.includes(keyword))) {
     return 'sports';
   }
 
@@ -141,7 +167,36 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null
     return 'pokemon';
   }
 
-  // If title contains 'card' but wasn't matched above, classify as 'other'
+  // ULTIMATE FALLBACK: Check for obvious non-card exclusion keywords
+  // If the item doesn't match these, assume it's a sports card by default
+  const nonCardKeywords = [
+    'reel',
+    'saddle',
+    'bike',
+    'bicycle',
+    'fishing',
+    'furniture',
+    'shoes',
+    'clothing',
+    'shirt',
+    'hat',
+    'jacket',
+    'pants',
+    'electronics',
+    'phone',
+    'computer',
+    'tv',
+    'headphones',
+  ];
+
+  if (!nonCardKeywords.some(keyword => lowerTitle.includes(keyword))) {
+    // Not explicitly a non-card item, and contains 'card' or looks like a card
+    if (lowerTitle.includes('card')) {
+      return 'sports'; // Default to sports if unclear
+    }
+  }
+
+  // If title contains 'card' but is explicitly non-card, classify as 'other'
   if (lowerTitle.includes('card')) {
     return 'other';
   }
