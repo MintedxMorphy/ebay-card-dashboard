@@ -81,7 +81,7 @@ export const fetchSalesTransactions = async (accessToken: string, limit = 10) =>
     return response.data;
   } catch (error) {
     console.error('eBay sales fetch error:', error);
-    console.log('eBay errors:', JSON.stringify(error?.response?.data?.errors));
+    console.log('eBay errors:', JSON.stringify((error as any)?.response?.data?.errors));
     throw error;
   }
 };
