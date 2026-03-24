@@ -51,6 +51,12 @@ export default function Dashboard() {
         }
 
         const data = await response.json();
+        
+        // Ensure transactions is always an array
+        if (!data.transactions) {
+          data.transactions = [];
+        }
+        
         setStats(data);
         setError(null);
       } catch (err) {

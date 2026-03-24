@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log(`Found ${transactions?.length || 0} transactions for user ${userId}`);
+
     // Calculate stats
     const stats = {
       sports_spent: 0,
@@ -51,21 +53,23 @@ export async function GET(request: NextRequest) {
       transactions: transactions || [],
     };
 
-    transactions?.forEach((tx: any) => {
-      if (tx.card_category === 'sports') {
-        if (tx.transaction_type === 'buy') {
-          stats.sports_spent += tx.amount;
-        } else {
-          stats.sports_revenue += tx.amount;
+    if (transactions && transactions.length > 0) {
+      transactions.forEach((tx: any) => {
+        if (tx.card_category === 'sports') {
+          if (tx.transaction_type === 'buy') {
+            stats.sports_spent += tx.amount;
+          } else {
+            stats.sports_revenue += tx.amount;
+          }
+        } else if (tx.card_category === 'pokemon') {
+          if (tx.transaction_type === 'buy') {
+            stats.pokemon_spent += tx.amount;
+          } else {
+            stats.pokemon_revenue += tx.amount;
+          }
         }
-      } else if (tx.card_category === 'pokemon') {
-        if (tx.transaction_type === 'buy') {
-          stats.pokemon_spent += tx.amount;
-        } else {
-          stats.pokemon_revenue += tx.amount;
-        }
-      }
-    });
+      });
+    }
 
     stats.sports_profit = stats.sports_revenue - stats.sports_spent;
     stats.pokemon_profit = stats.pokemon_revenue - stats.pokemon_spent;
