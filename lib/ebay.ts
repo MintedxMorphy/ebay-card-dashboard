@@ -105,8 +105,37 @@ export const fetchBuyingHistory = async (accessToken: string) => {
   }
 };
 
-export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null => {
-  const lowerTitle = title.toLowerCase();
+export const getItemDetailsFromBrowseAPI = async (itemId: string, accessToken: string): Promise<{ description: string; category: string } | null> => {
+  try {
+    // Use the Browse API to fetch full item details
+    const response = await fetch(
+      `https://api.ebay.com/buy/browse/v1/item/${itemId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Language': 'en-US',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.log(`[Browse API] Failed to fetch item ${itemId}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      description: data.description || '',
+      category: data.categoryPath || '',
+    };
+  } catch (error) {
+    console.error(`[Browse API] Error fetching ${itemId}:`, error);
+    return null;
+  }
+};
+
+export const isCardItem = (title: string, description?: string): 'sports' | 'pokemon' | 'other' | null => {
+  const searchText = (description ? `${title} ${description}` : title).toLowerCase();
 
   // Sports cards - CHECK FIRST (Panini Prizm should be sports, not pokemon)
   const sportsBrands = [
@@ -146,23 +175,23 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null
   ];
 
   // Check sports brands
-  if (sportsBrands.some(brand => lowerTitle.includes(brand))) {
+  if (sportsBrands.some(brand => searchText.includes(brand))) {
     return 'sports';
   }
 
   // Check sports-specific keywords
-  if (sportsKeywords.some(keyword => lowerTitle.includes(keyword))) {
+  if (sportsKeywords.some(keyword => searchText.includes(keyword))) {
     return 'sports';
   }
 
   // Pokemon cards - check after sports to avoid false positives
   if (
-    lowerTitle.includes('pokemon') ||
-    lowerTitle.includes('charizard') ||
-    lowerTitle.includes('pikachu') ||
-    lowerTitle.includes('psa') ||
-    lowerTitle.includes('bgvg') ||
-    lowerTitle.includes('tcg')
+    searchText.includes('pokemon') ||
+    searchText.includes('charizard') ||
+    searchText.includes('pikachu') ||
+    searchText.includes('psa') ||
+    searchText.includes('bgvg') ||
+    searchText.includes('tcg')
   ) {
     return 'pokemon';
   }
@@ -189,15 +218,15 @@ export const isCardItem = (title: string): 'sports' | 'pokemon' | 'other' | null
     'headphones',
   ];
 
-  if (!nonCardKeywords.some(keyword => lowerTitle.includes(keyword))) {
+  if (!nonCardKeywords.some(keyword => searchText.includes(keyword))) {
     // Not explicitly a non-card item, and contains 'card' or looks like a card
-    if (lowerTitle.includes('card')) {
+    if (searchText.includes('card')) {
       return 'sports'; // Default to sports if unclear
     }
   }
 
   // If title contains 'card' but is explicitly non-card, classify as 'other'
-  if (lowerTitle.includes('card')) {
+  if (searchText.includes('card')) {
     return 'other';
   }
 

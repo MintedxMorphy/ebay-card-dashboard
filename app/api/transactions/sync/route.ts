@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchSalesTransactions, isCardItem } from '@/lib/ebay';
+import { fetchSalesTransactions, isCardItem, getItemDetailsFromBrowseAPI } from '@/lib/ebay';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
@@ -40,10 +40,20 @@ export async function POST(request: NextRequest) {
       const amountPerItem = saleAmount / cardLineItems.length;
 
       for (const item of cardLineItems) {
-        const cardType = isCardItem(item.title);
+        let cardType = isCardItem(item.title);
+
+        // If title check failed, try Browse API with full item description
+        if (!cardType && item.legacyItemId) {
+          console.log(`[SYNC] ${item.title} - Initial check failed, trying Browse API...`);
+          const itemDetails = await getItemDetailsFromBrowseAPI(item.legacyItemId, accessToken);
+          if (itemDetails) {
+            cardType = isCardItem(item.title, itemDetails.description);
+            console.log(`[SYNC] ${item.title} - Browse API result: ${cardType || 'still null'}`);
+          }
+        }
 
         if (cardType) {
-          console.log(`[SYNC] Order ${order.orderId} - ${item.title} - Storing date: ${order.creationDate || 'NULL (using NOW())'}`);
+          console.log(`[SYNC] Order ${order.orderId} - ${item.title} - Category: ${cardType} - Storing date: ${order.creationDate || 'NULL (using NOW())'}`);
           cardTransactions.push({
             user_id: userId,
             transaction_type: 'sell',
@@ -53,6 +63,8 @@ export async function POST(request: NextRequest) {
             ebay_order_id: order.orderId,
             transaction_date: order.creationDate || new Date().toISOString(),
           });
+        } else {
+          console.log(`[SYNC] Order ${order.orderId} - ${item.title} - DROPPED (not identified as card)`);
         }
       }
     }
