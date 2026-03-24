@@ -16,6 +16,7 @@ interface Transaction {
   card_category: string;
   transaction_type: string;
   amount: number;
+  card_name: string;
   created_at: string;
   transaction_date: string;
 }
