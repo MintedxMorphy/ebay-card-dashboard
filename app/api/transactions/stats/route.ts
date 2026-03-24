@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Get userId from query params
     const userId = request.nextUrl.searchParams.get('userId');
+    const includeOther = request.nextUrl.searchParams.get('includeOther') === 'true';
 
     if (!userId) {
       return NextResponse.json(
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Fetching transactions for userId:', userId);
+    console.log('Fetching transactions for userId:', userId, 'includeOther:', includeOther);
 
     // Fetch all transactions for this user
     const { data: transactions, error } = await supabase
@@ -41,6 +42,11 @@ export async function GET(request: NextRequest) {
 
     console.log(`Found ${transactions?.length || 0} transactions for user ${userId}`);
 
+    // Filter transactions based on includeOther flag
+    const filteredTransactions = !includeOther
+      ? transactions?.filter((tx: any) => tx.card_category !== 'other') || []
+      : transactions || [];
+
     // Calculate stats
     const stats = {
       sports_spent: 0,
@@ -50,11 +56,16 @@ export async function GET(request: NextRequest) {
       pokemon_revenue: 0,
       pokemon_profit: 0,
       total_profit: 0,
-      transactions: transactions || [],
+      transactions: filteredTransactions,
     };
 
     if (transactions && transactions.length > 0) {
       transactions.forEach((tx: any) => {
+        // Skip 'other' category if not included
+        if (!includeOther && tx.card_category === 'other') {
+          return;
+        }
+
         if (tx.card_category === 'sports') {
           if (tx.transaction_type === 'buy') {
             stats.sports_spent += tx.amount;
@@ -66,6 +77,13 @@ export async function GET(request: NextRequest) {
             stats.pokemon_spent += tx.amount;
           } else {
             stats.pokemon_revenue += tx.amount;
+          }
+        } else if (includeOther && tx.card_category === 'other') {
+          // When includeOther is ON, add 'other' items to sports totals
+          if (tx.transaction_type === 'buy') {
+            stats.sports_spent += tx.amount;
+          } else {
+            stats.sports_revenue += tx.amount;
           }
         }
       });
