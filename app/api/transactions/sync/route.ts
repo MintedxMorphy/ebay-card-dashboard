@@ -30,20 +30,16 @@ export async function POST(request: NextRequest) {
             transaction_type: 'sell',
             card_category: cardType,
             amount: parseFloat(item.lineItemPrice?.value || '0'),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
           });
         }
       }
     }
 
-    // Upsert transactions
+    // Insert transactions (no upsert key since we don't have unique identifier from eBay)
     if (cardTransactions.length > 0) {
       const { error } = await supabase
         .from('transactions')
-        .upsert(cardTransactions, {
-          onConflict: 'ebay_transaction_id',
-        });
+        .insert(cardTransactions);
 
       if (error) {
         console.error('Supabase insert error:', error);
