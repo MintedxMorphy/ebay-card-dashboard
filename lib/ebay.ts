@@ -63,7 +63,7 @@ export const getAccessToken = async (code: string) => {
   }
 };
 
-export const fetchSalesTransactions = async (accessToken: string, limit = 50) => {
+export const fetchSalesTransactions = async (accessToken: string, limit = 10) => {
   try {
     const response = await axios.get(
       `${EBAY_API_BASE}/sell/fulfillment/v1/order`,
@@ -74,7 +74,6 @@ export const fetchSalesTransactions = async (accessToken: string, limit = 50) =>
         },
         params: {
           limit,
-          filter: 'fulfillmentStatus:{FULFILLED|IN_PROGRESS}',
         },
       }
     );
@@ -82,6 +81,7 @@ export const fetchSalesTransactions = async (accessToken: string, limit = 50) =>
     return response.data;
   } catch (error) {
     console.error('eBay sales fetch error:', error);
+    console.error('eBay error:', JSON.stringify(error.response?.data, null, 2));
     throw error;
   }
 };
