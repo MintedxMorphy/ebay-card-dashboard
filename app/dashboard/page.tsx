@@ -17,15 +17,18 @@ interface Transaction {
   amount: number;
   card_name: string;
   created_at: string;
+  transaction_date: string;
 }
 
 interface Stats {
   sports_spent: number;
   sports_revenue: number;
   sports_profit: number;
+  sports_count: number;
   pokemon_spent: number;
   pokemon_revenue: number;
   pokemon_profit: number;
+  pokemon_count: number;
   total_profit: number;
   transactions: Transaction[];
 }
