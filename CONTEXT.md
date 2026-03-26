@@ -84,6 +84,17 @@ token_expires_at: TIMESTAMP
 
 ---
 
+## Status Update (March 25, 2026)
+
+**✅ Confirmed Fixed:**
+- ✅ Transaction dates showing correctly (actual eBay order dates)
+- ✅ All 9 eBay sales syncing correctly (no missing sells)
+- ✅ Price input UX — user types decimals manually (working as designed)
+
+**No known issues remaining** — app is stable and production-ready.
+
+---
+
 ## Next Priorities
 
 1. **Gamification** — XP system, trader ranks, badges
@@ -94,17 +105,19 @@ token_expires_at: TIMESTAMP
 
 ---
 
-## Last Commit
+## Last Commits
 
+**575b10c** — Add CONTEXT.md (session protocol)  
 **7981b3d** — Browse API fallback + collector keywords fix  
 Date: Tue Mar 24 12:43:01 2026 -0500
 
-### What Was Fixed
+### Recent Fixes
 - Browse API now fires for ANY item that fails isCardItem keyword check
 - Added collector keywords (case hit, sonic boom, sb-, sp, ssp, case break, 1/1)
 - Item Specifics parsing (localizedAspects) for structured card classification
 - Stats query fixed to count only filtered transactions accurately
 - eBay sync pagination added to fetch all orders beyond first page
+- Transaction dates and sales sync confirmed working correctly
 
 ---
 
