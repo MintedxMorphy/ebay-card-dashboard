@@ -25,6 +25,8 @@ export default function EditTransactionModal({
   onSave,
 }: EditTransactionModalProps) {
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [cardName, setCardName] = useState(transaction.card_name);
   const [category, setCategory] = useState<'sports' | 'pokemon'>(
     transaction.card_category as 'sports' | 'pokemon'
@@ -76,6 +78,34 @@ export default function EditTransactionModal({
       setError(err instanceof Error ? err.message : 'Failed to update transaction');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setError(null);
+    setDeleting(true);
+
+    try {
+      const response = await fetch('/api/transactions/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionId: transaction.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete transaction');
+      }
+
+      onClose();
+      onSave();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete transaction');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -158,6 +188,16 @@ export default function EditTransactionModal({
             </button>
             <button
               type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex-1 px-4 py-2 rounded border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold transition"
+              style={{
+                boxShadow: '0 0 10px rgba(255, 0, 110, 0.3)',
+              }}
+            >
+              Delete
+            </button>
+            <button
+              type="button"
               onClick={onClose}
               className="flex-1 px-4 py-2 rounded border-2 border-gray-500 text-gray-300 font-mono font-bold transition"
             >
@@ -165,6 +205,41 @@ export default function EditTransactionModal({
             </button>
           </div>
         </form>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4">
+            <div
+              className="bg-black border-2 border-[#ff006e] rounded-xl p-6 w-full max-w-sm"
+              style={{
+                boxShadow: '0 0 20px rgba(255, 0, 110, 0.5)',
+              }}
+            >
+              <h3 className="text-xl font-bold text-[#ff006e] mb-3 font-mono">Delete Transaction? ⚠️</h3>
+              <p className="text-gray-300 mb-4 font-mono text-sm">
+                Are you sure you want to delete <span className="font-bold">{transaction.card_name}</span>? This cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 rounded border-2 border-[#ff006e] text-[#ff006e] font-mono font-bold transition disabled:opacity-50"
+                  style={{
+                    boxShadow: '0 0 10px rgba(255, 0, 110, 0.3)',
+                  }}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-2 rounded border-2 border-gray-500 text-gray-300 font-mono font-bold transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
