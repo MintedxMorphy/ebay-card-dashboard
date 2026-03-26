@@ -19,6 +19,7 @@
 ✅ Profit Over Time chart working  
 ✅ Category Breakdown charts working  
 ✅ Include Other Sales toggle  
+✅ All Transactions displayed (no limit — shows entire history with scrolling)  
 
 ---
 

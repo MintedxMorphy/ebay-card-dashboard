@@ -93,27 +93,27 @@ export default function ProfitChart({ transactions }: ProfitChartProps) {
             <Line
               type="monotone"
               dataKey="profit"
-              stroke="#10b981"
+              stroke="#00ffff"
               strokeWidth={2}
-              dot={{ fill: '#10b981', r: 4 }}
+              dot={{ fill: '#00ffff', r: 4 }}
               activeDot={{ r: 6 }}
               name="Profit"
             />
             <Line
               type="monotone"
               dataKey="revenue"
-              stroke="#3b82f6"
+              stroke="#8b00ff"
               strokeWidth={2}
-              dot={{ fill: '#3b82f6', r: 4 }}
+              dot={{ fill: '#8b00ff', r: 4 }}
               activeDot={{ r: 6 }}
               name="Revenue"
             />
             <Line
               type="monotone"
               dataKey="spent"
-              stroke="#f97316"
+              stroke="#ff6b00"
               strokeWidth={2}
-              dot={{ fill: '#f97316', r: 4 }}
+              dot={{ fill: '#ff6b00', r: 4 }}
               activeDot={{ r: 6 }}
               name="Spent"
             />

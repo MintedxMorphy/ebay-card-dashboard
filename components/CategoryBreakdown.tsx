@@ -65,32 +65,32 @@ export default function CategoryBreakdown({ stats, transactions }: CategoryBreak
             labelStyle={{ color: '#fff' }}
           />
           <Legend wrapperStyle={{ color: '#9ca3af' }} />
-          <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="spent" fill="#f97316" name="Spent" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="profit" fill="#10b981" name="Profit" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="revenue" fill="#8b00ff" name="Revenue" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="spent" fill="#ff6b00" name="Spent" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="profit" fill="#00ffff" name="Profit" radius={[8, 8, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
 
       {/* Category Stats */}
       <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 border border-red-500/30 p-4 rounded-lg backdrop-blur">
-          <h3 className="font-semibold text-red-300 mb-2">🏈 Sports Cards</h3>
-          <p className="text-sm text-red-200">
+        <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 border border-purple-500/30 p-4 rounded-lg backdrop-blur">
+          <h3 className="font-semibold text-purple-300 mb-2">🏈 Sports Cards</h3>
+          <p className="text-sm text-purple-200">
             Items: <span className="font-bold">{sportsItems}</span>
           </p>
-          <p className="text-sm text-red-200">
-            Profit: <span className={`font-bold ${stats.sports_profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <p className="text-sm text-purple-200">
+            Profit: <span className={`font-bold ${stats.sports_profit >= 0 ? 'text-[#00ffff]' : 'text-[#ff6b00]'}`}>
               {formatCurrency(stats.sports_profit)}
             </span>
           </p>
         </div>
-        <div className="bg-gradient-to-br from-yellow-900/50 to-yellow-800/50 border border-yellow-500/30 p-4 rounded-lg backdrop-blur">
-          <h3 className="font-semibold text-yellow-300 mb-2">⚡ Pokemon Cards</h3>
-          <p className="text-sm text-yellow-200">
+        <div className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 border border-orange-500/30 p-4 rounded-lg backdrop-blur">
+          <h3 className="font-semibold text-orange-300 mb-2">⚡ Pokemon Cards</h3>
+          <p className="text-sm text-orange-200">
             Items: <span className="font-bold">{pokemonItems}</span>
           </p>
-          <p className="text-sm text-yellow-200">
-            Profit: <span className={`font-bold ${stats.pokemon_profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <p className="text-sm text-orange-200">
+            Profit: <span className={`font-bold ${stats.pokemon_profit >= 0 ? 'text-[#00ffff]' : 'text-[#ff6b00]'}`}>
               {formatCurrency(stats.pokemon_profit)}
             </span>
           </p>

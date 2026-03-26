@@ -210,17 +210,17 @@ export default function Dashboard() {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="rounded-xl bg-black border border-[#00ff41]/30 p-6" style={{
-            boxShadow: '0 0 15px rgba(0, 255, 65, 0.1)'
+          <div className="rounded-xl bg-black border border-[#00ffff]/30 p-6" style={{
+            boxShadow: '0 0 15px rgba(0, 255, 255, 0.1)'
           }}>
-            <h2 className="text-2xl font-bold text-[#00ff41] mb-6 font-mono">Profit Over Time 📈</h2>
+            <h2 className="text-2xl font-bold text-[#00ffff] mb-6 font-mono">Profit Over Time 📈</h2>
             <ProfitChart transactions={stats.transactions} />
           </div>
           
-          <div className="rounded-xl bg-black border border-[#ff006e]/30 p-6" style={{
-            boxShadow: '0 0 15px rgba(255, 0, 110, 0.1)'
+          <div className="rounded-xl bg-black border border-[#8b00ff]/30 p-6" style={{
+            boxShadow: '0 0 15px rgba(139, 0, 255, 0.1)'
           }}>
-            <h2 className="text-2xl font-bold text-[#ff006e] mb-6 font-mono">Category Breakdown 🏆</h2>
+            <h2 className="text-2xl font-bold text-[#8b00ff] mb-6 font-mono">Category Breakdown 🏆</h2>
             <CategoryBreakdown stats={stats} transactions={stats.transactions} />
           </div>
         </div>
@@ -234,7 +234,9 @@ export default function Dashboard() {
             {stats.transactions.length === 0 ? (
               <p className="text-gray-400">No transactions yet. Start logging your cards!</p>
             ) : (
-              stats.transactions.map((tx) => (
+              [...stats.transactions]
+                .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+                .map((tx, index) => (
                 <div
                   key={tx.id}
                   onClick={() => {
@@ -245,18 +247,23 @@ export default function Dashboard() {
                     borderColor: tx.transaction_type === 'buy' ? 'rgba(255, 0, 110, 0.2)' : 'rgba(0, 255, 65, 0.2)',
                   }}
                 >
-                  <div className="flex-1">
-                    <p className="font-semibold text-white font-mono">
-                      {tx.card_name}
-                      <span className={`ml-2 text-sm font-bold ${
-                        tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
-                      }`}>
-                        {tx.transaction_type === 'buy' ? '🛍️ Bought' : '🎯 Sold'}
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-400 font-mono">
-                      {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.transaction_date).toLocaleDateString()}
-                    </p>
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-[#8b00ff] font-bold text-sm font-mono bg-[#8b00ff]/10 px-2 py-1 rounded min-w-[2.5rem] text-center">
+                      #{index + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white font-mono">
+                        {tx.card_name}
+                        <span className={`ml-2 text-sm font-bold ${
+                          tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
+                        }`}>
+                          {tx.transaction_type === 'buy' ? '🛍️ Bought' : '🎯 Sold'}
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-400 font-mono">
+                        {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.transaction_date).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                   <div className={`text-right font-bold font-mono ${
                     tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
