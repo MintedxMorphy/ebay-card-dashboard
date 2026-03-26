@@ -225,16 +225,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Transactions */}
+        {/* All Transactions */}
         <div className="rounded-xl bg-black border border-[#00ff41]/30 p-6" style={{
           boxShadow: '0 0 15px rgba(0, 255, 65, 0.1)'
         }}>
-          <h2 className="text-2xl font-bold text-[#00ff41] mb-6 font-mono">Recent Transactions 🃏</h2>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <h2 className="text-2xl font-bold text-[#00ff41] mb-6 font-mono">All Transactions 🃏</h2>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
             {stats.transactions.length === 0 ? (
               <p className="text-gray-400">No transactions yet. Start logging your cards!</p>
             ) : (
-              stats.transactions.slice(0, 10).map((tx) => (
+              stats.transactions.map((tx) => (
                 <div
                   key={tx.id}
                   onClick={() => {
