@@ -10,7 +10,9 @@ interface NewsItem {
   impact: 'BULLISH' | 'BEARISH' | 'WATCH';
   category: 'SPORTS' | 'POKEMON';
   summary: string;
-  published_date?: string; // ISO string, used internally for filtering
+  published_date?: string; // ISO string, used internally for filtering (legacy)
+  event_date?: string;     // When the actual NEWS EVENT happened (YYYY-MM-DD)
+  article_date?: string;   // When the article/story was published (YYYY-MM-DD)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -131,9 +133,9 @@ async function queryPerplexity(query: string, apiKey: string): Promise<Perplexit
         {
           role: 'system',
           content:
-            'You are a real-time breaking news aggregator. Return ONLY factual breaking news from TODAY (last 24 hours). ' +
-            'For each story include the publication date (YYYY-MM-DD) in your response. ' +
-            'Do NOT fabricate or hallucinate stories. Do NOT include stories older than 24 hours.',
+            'You are a real-time breaking news aggregator. Return ONLY factual breaking news where the actual EVENT happened in the last 24 hours. ' +
+            'For each story include BOTH the event date (when the event actually occurred, YYYY-MM-DD) AND the article date (when published). ' +
+            'Do NOT fabricate or hallucinate stories. Do NOT include stories where the underlying event is older than 24 hours, even if a new article was written about an old event today.',
         },
         {
           role: 'user',
@@ -196,10 +198,15 @@ async function classifyWithClaude(
 
 Below are real breaking news results from a live web search about trading cards, sports, and Pokemon.
 
-STRICT RULE: Only include stories whose publication date is AFTER ${cutoffISO}.
-- If you can identify a publish date and it is OLDER than 24 hours, SKIP that story entirely.
-- If you cannot find any date clue for a story, SKIP it (assume it's old).
-- Include the detected publication date in the "published_date" field (YYYY-MM-DD).
+For each story you MUST extract TWO separate dates:
+1. "event_date": When did the actual EVENT happen? (e.g., when the player retired, when the set was announced, when the trade happened). This is what the news is ABOUT.
+2. "article_date": When was this article/story PUBLISHED? (may be today even if the event happened weeks ago).
+
+STRICT FILTERING RULE: Only include stories where "event_date" is AFTER ${cutoffISO}.
+- If the actual EVENT happened more than 24 hours ago, REJECT the story — even if someone wrote a new article about it today.
+- Example: Chris Paul retirement was announced February 2026 → event_date = Feb 2026 → REJECT even if article published today.
+- Example: LeBron James injury happened today → event_date = today → ACCEPT.
+- If you cannot determine event_date, SKIP the story (assume old event).
 
 For each valid story, classify as:
 - BULLISH: Will likely INCREASE card values
@@ -209,7 +216,7 @@ For each valid story, classify as:
 Raw search results:
 ${rawResults}${citationList}
 
-Return a JSON array of up to 8 news items that pass the 24-hour filter:
+Return a JSON array of up to 8 news items that pass the filter:
 [
   {
     "headline": "Punchy trader-focused headline max 80 chars",
@@ -218,7 +225,8 @@ Return a JSON array of up to 8 news items that pass the 24-hour filter:
     "impact": "BULLISH",
     "category": "SPORTS",
     "summary": "1-2 sentences on why this matters to card collectors/investors",
-    "published_date": "YYYY-MM-DD"
+    "event_date": "YYYY-MM-DD",
+    "article_date": "YYYY-MM-DD"
   }
 ]
 
@@ -258,30 +266,52 @@ Return ONLY the JSON array. No markdown fences.`;
 
   const filtered: NewsItem[] = [];
   for (const item of parsed) {
-    const pub = item.published_date ?? extractDateFromText(item.headline + ' ' + item.summary);
+    // Primary: use event_date (when the actual news happened)
+    // Fallback: try to extract from text, then article_date as last resort
+    const eventDateStr =
+      item.event_date ??
+      extractDateFromText(item.headline + ' ' + item.summary) ??
+      item.article_date ??
+      item.published_date;
 
-    if (!pub) {
-      console.log(`[EdgeNews][Filter] REJECTED (no date): "${item.headline}"`);
+    if (!eventDateStr) {
+      console.log(`[EdgeNews][Filter] REJECTED (no event_date): "${item.headline}"`);
       continue;
     }
 
-    const pubDate = new Date(pub);
-    if (isNaN(pubDate.getTime()) || pubDate < cutoffDate) {
+    const eventDate = new Date(eventDateStr);
+    if (isNaN(eventDate.getTime()) || eventDate < cutoffDate) {
       console.log(
-        `[EdgeNews][Filter] REJECTED (too old: ${pub}): "${item.headline}"`
+        `[EdgeNews][Filter] REJECTED (event too old: event_date=${eventDateStr}, article_date=${item.article_date ?? 'unknown'}): "${item.headline}"`
       );
       continue;
     }
 
-    console.log(`[EdgeNews][Filter] ACCEPTED (${pub}): "${item.headline}"`);
+    // Compute a human-readable time_ago based on event_date (not article_date)
+    const eventHoursAgo = Math.floor((Date.now() - eventDate.getTime()) / 1000 / 60 / 60);
+    const eventMinsAgo = Math.floor((Date.now() - eventDate.getTime()) / 1000 / 60);
+    let timeAgo: string;
+    if (eventMinsAgo < 60) {
+      timeAgo = eventMinsAgo <= 1 ? 'Just now' : `${eventMinsAgo}m ago`;
+    } else if (eventHoursAgo < 24) {
+      timeAgo = `${eventHoursAgo}h ago`;
+    } else {
+      timeAgo = 'Today';
+    }
+
+    console.log(
+      `[EdgeNews][Filter] ACCEPTED (event_date=${eventDateStr}, article_date=${item.article_date ?? 'unknown'}): "${item.headline}"`
+    );
     filtered.push({
       headline: String(item.headline || '').slice(0, 80),
       source_url: String(item.source_url || '#'),
-      time_ago: String(item.time_ago || 'Today'),
+      time_ago: timeAgo,
       impact: (['BULLISH', 'BEARISH', 'WATCH'].includes(item.impact) ? item.impact : 'WATCH') as NewsItem['impact'],
       category: (['SPORTS', 'POKEMON'].includes(item.category) ? item.category : 'SPORTS') as NewsItem['category'],
       summary: String(item.summary || '').slice(0, 200),
-      published_date: pub,
+      event_date: eventDateStr,
+      article_date: String(item.article_date || eventDateStr),
+      published_date: eventDateStr, // keep for legacy compat
     });
   }
 
@@ -406,8 +436,10 @@ export async function GET(request: Request) {
     };
 
     if (debug) {
-      responsePayload.published_dates = news.map((n) => ({
+      responsePayload.date_debug = news.map((n) => ({
         headline: n.headline,
+        event_date: n.event_date ?? 'unknown',
+        article_date: n.article_date ?? 'unknown',
         published_date: n.published_date ?? 'unknown',
       }));
     }
