@@ -65,10 +65,10 @@ export default function EbaySuccess() {
 
       <div className="relative z-10 text-center">
         <div className="text-6xl mb-8 animate-pulse">🚀</div>
-        <h1 className="text-2xl font-mono font-bold text-[#00ff41] mb-4" style={{
+        <h1 className="text-4xl font-mono font-bold text-[#00ff41] mb-4" style={{
           textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
         }}>
-          CardTrack x Gabriel
+          CARDTRACK
         </h1>
         <p className="text-lg font-mono text-gray-400 mb-8">
           {status}
