@@ -70,11 +70,16 @@ async function cacheNews(items: NewsItem[]): Promise<void> {
   }
 }
 
+interface PerplexityResponse {
+  content: string;
+  citations: string[];
+}
+
 /**
  * Query Perplexity with recency_filter: "day" to get truly fresh results.
- * Returns the raw text content from the response.
+ * Returns both the text content and actual citation URLs.
  */
-async function queryPerplexity(query: string, apiKey: string): Promise<string> {
+async function queryPerplexity(query: string, apiKey: string): Promise<PerplexityResponse> {
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: {
@@ -105,14 +110,20 @@ async function queryPerplexity(query: string, apiKey: string): Promise<string> {
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content ?? '';
+  const content = data.choices?.[0]?.message?.content ?? '';
+  // Perplexity returns citations as an array of URLs at top level
+  const citations: string[] = Array.isArray(data.citations) ? data.citations : [];
+  return { content, citations };
 }
 
 /**
  * Use Claude to classify and structure the raw Perplexity results into NewsItems.
  */
-async function classifyWithClaude(rawResults: string, anthropicKey: string): Promise<NewsItem[]> {
+async function classifyWithClaude(rawResults: string, citations: string[], anthropicKey: string): Promise<NewsItem[]> {
   const today = new Date().toISOString().split('T')[0];
+  const citationList = citations.length > 0
+    ? `\n\nAVAILABLE SOURCE URLs (use these for source_url — pick the most relevant one per story):\n${citations.map((url, i) => `[${i + 1}] ${url}`).join('\n')}`
+    : '';
 
   const prompt = `Today is ${today}. Below are real breaking news results (last 24 hours only) from live web search about trading cards, sports, and Pokemon.
 
@@ -124,13 +135,15 @@ For each real story, classify as:
 - WATCH: Monitor but unclear impact
 
 Raw search results:
-${rawResults}
+${rawResults}${citationList}
 
-Return a JSON array of up to 8 news items. Each item must be REAL (from the search results above), not fabricated:
+Return a JSON array of up to 8 news items. Each item must be REAL (from the search results above), not fabricated.
+For source_url: use one of the AVAILABLE SOURCE URLs above (must start with https://). Do NOT make up URLs.
+
 [
   {
     "headline": "Punchy trader-focused headline max 80 chars",
-    "source_url": "https://actual-url-from-results.com",
+    "source_url": "https://real-url-from-citations-list.com",
     "time_ago": "X hours ago",
     "impact": "BULLISH",
     "category": "SPORTS",
@@ -197,10 +210,15 @@ async function fetchLiveNews(): Promise<NewsItem[]> {
     queries.map((q) => queryPerplexity(q, perplexityKey))
   );
 
-  const combined = results
-    .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
-    .map((r) => r.value)
-    .join('\n\n---\n\n');
+  const fulfilledResults = results.filter(
+    (r): r is PromiseFulfilledResult<PerplexityResponse> => r.status === 'fulfilled'
+  );
+
+  const combined = fulfilledResults.map((r) => r.value.content).join('\n\n---\n\n');
+  // Collect all citation URLs from all queries, deduplicated
+  const allCitations = [...new Set(fulfilledResults.flatMap((r) => r.value.citations))];
+
+  console.log(`Perplexity returned ${allCitations.length} citation URLs`);
 
   if (!combined.trim()) {
     return [];
@@ -209,7 +227,7 @@ async function fetchLiveNews(): Promise<NewsItem[]> {
   // Use Claude to classify if available, otherwise do basic parsing
   if (anthropicKey && anthropicKey !== 'your_anthropic_api_key_here') {
     try {
-      return await classifyWithClaude(combined, anthropicKey);
+      return await classifyWithClaude(combined, allCitations, anthropicKey);
     } catch (err) {
       console.error('Claude classification failed:', err);
     }
