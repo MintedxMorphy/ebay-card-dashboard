@@ -9,6 +9,7 @@ import Navigation from '@/components/Navigation';
 import LogBuyForm from '@/components/LogBuyForm';
 import LogSellForm from '@/components/LogSellForm';
 import EditTransactionModal from '@/components/EditTransactionModal';
+import EdgeNews from '@/components/EdgeNews';
 
 interface Transaction {
   id: string;
@@ -206,6 +207,11 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="mb-12">
           <StatsCards stats={stats} />
+        </div>
+
+        {/* Edge News Widget */}
+        <div className="mb-12">
+          <EdgeNews />
         </div>
 
         {/* Charts */}
