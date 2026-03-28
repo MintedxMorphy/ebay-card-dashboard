@@ -29,7 +29,7 @@ export default function Home() {
             <div className="text-6xl font-mono font-black text-[#00ff41] drop-shadow-lg" style={{
               textShadow: '0 0 20px rgba(0, 255, 65, 0.5), 0 0 40px rgba(255, 0, 110, 0.3)',
             }}>
-              {'> CARDTRACK x GABRIEL'}
+              {'> CARDTRACK'}
             </div>
             <div className="h-px bg-gradient-to-r from-transparent via-[#ff006e] to-transparent"></div>
             <p className="text-xs md:text-sm text-gray-400 font-mono tracking-widest uppercase">
@@ -50,21 +50,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Stats preview */}
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="border border-[#00ff41] border-opacity-30 p-3 bg-black bg-opacity-50">
-              <div className="text-[#00ff41] text-2xl font-mono font-black">12</div>
-              <div className="text-xs text-gray-500 font-mono mt-1">Transactions</div>
-            </div>
-            <div className="border border-[#ff006e] border-opacity-30 p-3 bg-black bg-opacity-50">
-              <div className="text-[#ff006e] text-2xl font-mono font-black">$370</div>
-              <div className="text-xs text-gray-500 font-mono mt-1">Total Revenue</div>
-            </div>
-            <div className="border border-[#00ff41] border-opacity-30 p-3 bg-black bg-opacity-50">
-              <div className="text-[#00ff41] text-2xl font-mono font-black">$86.50</div>
-              <div className="text-xs text-gray-500 font-mono mt-1">Profit</div>
-            </div>
-          </div>
+
 
           {/* CTA Button */}
           <div className="pt-4">
