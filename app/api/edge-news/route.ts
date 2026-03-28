@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 
 const CACHE_TTL_MINUTES = 15;
+
+interface PerplexityResult {
+  title: string;
+  url: string;
+  snippet: string;
+  published_date?: string;
+}
 
 interface NewsItem {
   headline: string;
@@ -11,12 +17,6 @@ interface NewsItem {
   impact: 'BULLISH' | 'BEARISH' | 'WATCH';
   category: 'SPORTS' | 'POKEMON';
   summary: string;
-}
-
-interface CachedNews {
-  id?: string;
-  news_items: NewsItem[];
-  fetched_at: string;
 }
 
 function getSupabaseAdmin() {
@@ -60,7 +60,6 @@ async function cacheNews(items: NewsItem[]): Promise<void> {
   if (!supabase) return;
 
   try {
-    // Delete old entries and insert new
     await supabase.from('edge_news_cache').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('edge_news_cache').insert({
       news_items: items,
@@ -71,145 +70,160 @@ async function cacheNews(items: NewsItem[]): Promise<void> {
   }
 }
 
-async function fetchNewsWithClaude(): Promise<NewsItem[]> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === 'your_anthropic_api_key_here') {
-    // Return demo data when no API key
-    return getDemoNews();
+/**
+ * Query Perplexity with recency_filter: "day" to get truly fresh results.
+ * Returns the raw text content from the response.
+ */
+async function queryPerplexity(query: string, apiKey: string): Promise<string> {
+  const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'sonar',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a real-time news aggregator. Return ONLY factual breaking news from the last 24 hours. Do NOT fabricate or hallucinate stories. If there are no relevant stories from today, say so clearly.',
+        },
+        {
+          role: 'user',
+          content: query,
+        },
+      ],
+      search_recency_filter: 'day',
+      return_citations: true,
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Perplexity API error ${response.status}: ${err}`);
   }
 
-  const client = new Anthropic({ apiKey });
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content ?? '';
+}
 
-  const prompt = `You are a sports card and trading card market intelligence analyst. Search for the LATEST breaking news (last 24-48 hours) relevant to trading card collectors and investors.
+/**
+ * Use Claude to classify and structure the raw Perplexity results into NewsItems.
+ */
+async function classifyWithClaude(rawResults: string, anthropicKey: string): Promise<NewsItem[]> {
+  const today = new Date().toISOString().split('T')[0];
 
-Search for news about:
-1. SPORTS CARDS: NBA/NFL/MLB/NHL player injuries, trades, retirements, championships, record-breaking performances, Hall of Fame announcements, rookie breakouts
-2. POKEMON CARDS: New Pokemon game announcements, set releases, card reprints, tournament results, banned cards, promo announcements, Pokemon Go events
-3. GRADING: PSA/BGS/CGC grading news, turnaround time changes, authentication issues, population report milestones
+  const prompt = `Today is ${today}. Below are real breaking news results (last 24 hours only) from live web search about trading cards, sports, and Pokemon.
 
-For each story, analyze:
-- BULLISH: This will likely INCREASE card values (injury to star → their rookie cards spike; championship win → player cards spike; limited reprint → demand up)
-- BEARISH: This will likely DECREASE card values (retirement → market saturation; scandal; reprint → supply up)
-- WATCH: Monitor but unclear impact yet
+IMPORTANT: Only include stories that are genuinely from today or the last 24 hours. If a story appears to be older or has no clear date, SKIP IT.
 
-Return EXACTLY 8 news items as a JSON array with this structure:
+For each real story, classify as:
+- BULLISH: Will likely INCREASE card values (injury to a star → rookie cards spike; championship win; limited reprint; new record)
+- BEARISH: Will likely DECREASE card values (retirement + market saturation; card reprint increasing supply; scandal)
+- WATCH: Monitor but unclear impact
+
+Raw search results:
+${rawResults}
+
+Return a JSON array of up to 8 news items. Each item must be REAL (from the search results above), not fabricated:
 [
   {
-    "headline": "Brief compelling headline (max 80 chars)",
-    "source_url": "https://actual-news-url.com/article",
-    "time_ago": "2 hours ago",
+    "headline": "Punchy trader-focused headline max 80 chars",
+    "source_url": "https://actual-url-from-results.com",
+    "time_ago": "X hours ago",
     "impact": "BULLISH",
     "category": "SPORTS",
-    "summary": "1-2 sentence explanation of why this matters to card collectors"
+    "summary": "1-2 sentences on why this matters to card collectors/investors"
   }
 ]
 
-Only return the JSON array, nothing else. Make headlines punchy and trader-focused.`;
+If there are fewer than 8 real stories, return only what's real. Return ONLY the JSON array.`;
 
-  const message = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 2000,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': anthropicKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   });
 
-  const content = message.content[0];
-  if (content.type !== 'text') {
-    return getDemoNews();
+  if (!response.ok) {
+    throw new Error(`Anthropic API error ${response.status}`);
   }
 
-  try {
-    // Extract JSON from response
-    const text = content.text.trim();
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return getDemoNews();
-    
-    const parsed = JSON.parse(jsonMatch[0]) as NewsItem[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return getDemoNews();
-    
-    // Validate and clean items
-    return parsed.slice(0, 8).map((item) => ({
-      headline: String(item.headline || '').slice(0, 80),
-      source_url: String(item.source_url || '#'),
-      time_ago: String(item.time_ago || 'Recently'),
-      impact: (['BULLISH', 'BEARISH', 'WATCH'].includes(item.impact) ? item.impact : 'WATCH') as NewsItem['impact'],
-      category: (['SPORTS', 'POKEMON'].includes(item.category) ? item.category : 'SPORTS') as NewsItem['category'],
-      summary: String(item.summary || '').slice(0, 200),
-    }));
-  } catch {
-    return getDemoNews();
-  }
+  const data = await response.json();
+  const text: string = data.content?.[0]?.text ?? '';
+
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) return [];
+
+  const parsed = JSON.parse(jsonMatch[0]) as NewsItem[];
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed.slice(0, 8).map((item) => ({
+    headline: String(item.headline || '').slice(0, 80),
+    source_url: String(item.source_url || '#'),
+    time_ago: String(item.time_ago || 'Today'),
+    impact: (['BULLISH', 'BEARISH', 'WATCH'].includes(item.impact) ? item.impact : 'WATCH') as NewsItem['impact'],
+    category: (['SPORTS', 'POKEMON'].includes(item.category) ? item.category : 'SPORTS') as NewsItem['category'],
+    summary: String(item.summary || '').slice(0, 200),
+  }));
 }
 
-function getDemoNews(): NewsItem[] {
+async function fetchLiveNews(): Promise<NewsItem[]> {
+  const perplexityKey = process.env.PERPLEXITY_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+  if (!perplexityKey) {
+    console.warn('PERPLEXITY_API_KEY not set — returning empty news');
+    return [];
+  }
+
+  // Run 3 targeted breaking-news queries in parallel
+  const queries = [
+    'Breaking sports news today: NBA NFL MLB player injury trade retirement announcement last 24 hours',
+    'Pokemon card news today: new set announcement reprint ban tournament results last 24 hours',
+    'PSA grading BGS CGC sports card news today: turnaround time population report announcement last 24 hours',
+  ];
+
+  const results = await Promise.allSettled(
+    queries.map((q) => queryPerplexity(q, perplexityKey))
+  );
+
+  const combined = results
+    .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+    .map((r) => r.value)
+    .join('\n\n---\n\n');
+
+  if (!combined.trim()) {
+    return [];
+  }
+
+  // Use Claude to classify if available, otherwise do basic parsing
+  if (anthropicKey && anthropicKey !== 'your_anthropic_api_key_here') {
+    try {
+      return await classifyWithClaude(combined, anthropicKey);
+    } catch (err) {
+      console.error('Claude classification failed:', err);
+    }
+  }
+
+  // Fallback: return raw results as a single WATCH item
   return [
     {
-      headline: '🏀 LeBron James Injury Update: Right Ankle',
-      source_url: 'https://www.espn.com',
-      time_ago: '1 hour ago',
-      impact: 'BULLISH',
-      category: 'SPORTS',
-      summary: 'LeBron\'s injury absence typically spikes demand for his rookie PSA 10 cards as collectors buy the dip.',
-    },
-    {
-      headline: '⚡ Scarlet & Violet Set 7 Full Card List Leaked',
-      source_url: 'https://www.serebii.net',
-      time_ago: '3 hours ago',
+      headline: '📰 Breaking news available — Claude key needed to classify',
+      source_url: '#',
+      time_ago: 'Just now',
       impact: 'WATCH',
-      category: 'POKEMON',
-      summary: 'New set reveals could shake up sealed market — watch for pre-order pricing on boxes.',
-    },
-    {
-      headline: '🏈 Patrick Mahomes Wins 4th Super Bowl MVP',
-      source_url: 'https://www.nfl.com',
-      time_ago: '6 hours ago',
-      impact: 'BULLISH',
       category: 'SPORTS',
-      summary: 'Championship wins drive massive spikes in rookie card values. Mahomes PSA 10s up 40% post-game.',
-    },
-    {
-      headline: '📊 PSA Drops Turnaround to 20 Business Days',
-      source_url: 'https://www.psacard.com',
-      time_ago: '12 hours ago',
-      impact: 'BULLISH',
-      category: 'SPORTS',
-      summary: 'Faster grading means more supply hitting market soon — get ungraded cards in NOW before the flood.',
-    },
-    {
-      headline: '⚡ Charizard ex Alt Art Hits $800 in Auctions',
-      source_url: 'https://www.ebay.com',
-      time_ago: '4 hours ago',
-      impact: 'BULLISH',
-      category: 'POKEMON',
-      summary: 'Alt art Charizard variants continue to dominate. High-grade copies setting new records weekly.',
-    },
-    {
-      headline: '🏀 Victor Wembanyama Named Defensive Player of Year',
-      source_url: 'https://www.nba.com',
-      time_ago: '8 hours ago',
-      impact: 'BULLISH',
-      category: 'SPORTS',
-      summary: 'Wemby award recognition continuing to push rookie card prices to new highs across all grades.',
-    },
-    {
-      headline: '⚡ Pokemon GO Fest 2025 Dates Announced',
-      source_url: 'https://pokemongolive.com',
-      time_ago: '14 hours ago',
-      impact: 'WATCH',
-      category: 'POKEMON',
-      summary: 'GO Fest usually introduces new Pokemon — watch for promo card announcements alongside the event.',
-    },
-    {
-      headline: '🏈 Aaron Rodgers Retirement Announcement',
-      source_url: 'https://www.nfl.com',
-      time_ago: '18 hours ago',
-      impact: 'BEARISH',
-      category: 'SPORTS',
-      summary: 'Retirement typically causes short-term selling pressure as investors lock in gains on high-grade copies.',
+      summary: 'Set ANTHROPIC_API_KEY to enable AI-powered news classification.',
     },
   ];
 }
@@ -231,24 +245,28 @@ export async function GET(request: Request) {
       }
     }
 
-    // Fetch fresh news
-    const news = await fetchNewsWithClaude();
+    const news = await fetchLiveNews();
 
-    // Cache the results
-    await cacheNews(news);
+    // Only cache if we got real results
+    if (news.length > 0) {
+      await cacheNews(news);
+    }
 
     return NextResponse.json({
       news,
       cached: false,
+      fetched_at: new Date().toISOString(),
       next_refresh: CACHE_TTL_MINUTES + ' minutes',
     });
   } catch (error) {
     console.error('Edge news error:', error);
-    // Return demo data on error
-    return NextResponse.json({
-      news: getDemoNews(),
-      cached: false,
-      error: 'Using cached demo data',
-    });
+    return NextResponse.json(
+      {
+        news: [],
+        cached: false,
+        error: 'Failed to fetch live news. Check PERPLEXITY_API_KEY.',
+      },
+      { status: 500 }
+    );
   }
 }
