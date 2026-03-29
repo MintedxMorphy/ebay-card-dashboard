@@ -3,6 +3,27 @@ import { createClient } from '@supabase/supabase-js';
 
 const CACHE_TTL_MINUTES = 15;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// In-memory cache (serverless module-level — survives within same instance)
+// Fallback when Supabase cache is unavailable (e.g., missing service role key)
+// ─────────────────────────────────────────────────────────────────────────────
+let memCache: { data: { sports_stories: NewsItem[]; pokemon_stories: NewsItem[] }; fetchedAt: number } | null = null;
+
+function getMemCache(): { sports_stories: NewsItem[]; pokemon_stories: NewsItem[] } | null {
+  if (!memCache) return null;
+  const ageMinutes = (Date.now() - memCache.fetchedAt) / 1000 / 60;
+  if (ageMinutes < CACHE_TTL_MINUTES) return memCache.data;
+  memCache = null;
+  return null;
+}
+
+function setMemCache(data: { sports_stories: NewsItem[]; pokemon_stories: NewsItem[] }): void {
+  const allItems = [...data.sports_stories, ...data.pokemon_stories];
+  if (allItems.length > 0) {
+    memCache = { data, fetchedAt: Date.now() };
+  }
+}
+
 interface NewsItem {
   headline: string;
   source_url: string;
@@ -455,7 +476,8 @@ export async function GET(request: Request) {
   try {
     // Try cache first (unless force refresh)
     if (!forceRefresh) {
-      const cached = await getCachedNews();
+      // Check Supabase cache first, then in-memory fallback
+      const cached = await getCachedNews() ?? getMemCache();
       if (cached) {
         const allNews = [...cached.sports_stories, ...cached.pokemon_stories];
         return NextResponse.json({
@@ -472,9 +494,10 @@ export async function GET(request: Request) {
     const result = await fetchLiveNews();
     const allNews = [...result.sports_stories, ...result.pokemon_stories];
 
-    // Only cache if we got real results
+    // Cache results (Supabase + in-memory fallback)
     if (allNews.length > 0) {
-      await cacheNews(result);
+      setMemCache(result); // Always set in-memory cache
+      await cacheNews(result); // Best-effort Supabase cache
     }
 
     const responsePayload: Record<string, unknown> = {
