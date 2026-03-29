@@ -35,7 +35,7 @@ async function getCachedNews(): Promise<{ sports_stories: NewsItem[]; pokemon_st
   try {
     const { data, error } = await supabase
       .from('edge_news_cache')
-      .select('*')
+      .select('id, news_items, fetched_at')
       .order('fetched_at', { ascending: false })
       .limit(1)
       .single();
@@ -47,15 +47,8 @@ async function getCachedNews(): Promise<{ sports_stories: NewsItem[]; pokemon_st
     const ageMinutes = (now.getTime() - fetchedAt.getTime()) / 1000 / 60;
 
     if (ageMinutes < CACHE_TTL_MINUTES) {
-      // Support new {sports_stories, pokemon_stories} format or legacy {news_items:[]}
-      if (data.sports_stories && data.pokemon_stories) {
-        return {
-          sports_stories: data.sports_stories as NewsItem[],
-          pokemon_stories: data.pokemon_stories as NewsItem[],
-        };
-      }
-      // Legacy: split flat array by category
       const items = (data.news_items || []) as NewsItem[];
+      if (items.length === 0) return null; // Don't serve empty cache
       return {
         sports_stories: items.filter((n) => n.category === 'SPORTS'),
         pokemon_stories: items.filter((n) => n.category === 'POKEMON'),
@@ -71,16 +64,22 @@ async function cacheNews(result: { sports_stories: NewsItem[]; pokemon_stories: 
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
 
+  const allItems = [...result.sports_stories, ...result.pokemon_stories];
+  if (allItems.length === 0) return; // Never cache empty results
+
   try {
     await supabase.from('edge_news_cache').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('edge_news_cache').insert({
-      sports_stories: result.sports_stories,
-      pokemon_stories: result.pokemon_stories,
-      news_items: [...result.sports_stories, ...result.pokemon_stories], // legacy compat
+    const { error } = await supabase.from('edge_news_cache').insert({
+      news_items: allItems,
       fetched_at: new Date().toISOString(),
     });
-  } catch {
-    // Cache write failure is non-fatal
+    if (error) {
+      console.warn('[EdgeNews][Cache] Write failed:', error.message);
+    } else {
+      console.log(`[EdgeNews][Cache] Wrote ${allItems.length} items to cache`);
+    }
+  } catch (err) {
+    console.warn('[EdgeNews][Cache] Write exception:', err);
   }
 }
 
@@ -221,11 +220,11 @@ For each story you MUST extract TWO separate dates:
 1. "event_date": When did the actual EVENT happen? (e.g., when the player retired, when the set was announced, when the trade happened). This is what the news is ABOUT.
 2. "article_date": When was this article/story PUBLISHED? (may be today even if the event happened weeks ago).
 
-STRICT FILTERING RULE: Only include stories where "event_date" is AFTER ${cutoffISO}.
-- If the actual EVENT happened more than 24 hours ago, REJECT the story — even if someone wrote a new article about it today.
-- Example: Chris Paul retirement was announced February 2026 → event_date = Feb 2026 → REJECT even if article published today.
+FILTERING RULE: Prefer stories where the event is recent (within 24h). Use today's date (${today}) as event_date if the article is clearly about something happening now/today and you cannot extract a specific event date.
+- If the actual EVENT clearly happened weeks or months ago, REJECT the story.
+- Example: Chris Paul retirement was announced February 2026 → event_date = Feb 2026 → REJECT.
 - Example: LeBron James injury happened today → event_date = today → ACCEPT.
-- If you cannot determine event_date, SKIP the story (assume old event).
+- If you cannot determine a specific event_date but the article appears recent, use "${today}" as event_date.
 
 ${categoryInstruction}
 
@@ -296,7 +295,20 @@ Return ONLY the JSON array. No markdown fences.`;
       item.published_date;
 
     if (!eventDateStr) {
-      console.log(`[EdgeNews][Filter] REJECTED (no event_date): "${item.headline}"`);
+      // No date found — default to accepting with article_date = today
+      console.log(`[EdgeNews][Filter] ACCEPTED (no event_date, assuming recent): "${item.headline}"`);
+      const todayISO = new Date().toISOString().split('T')[0];
+      filtered.push({
+        headline: String(item.headline || '').slice(0, 80),
+        source_url: String(item.source_url || '#'),
+        time_ago: 'Today',
+        impact: (['BULLISH', 'BEARISH', 'WATCH'].includes(item.impact) ? item.impact : 'WATCH') as NewsItem['impact'],
+        category: (['SPORTS', 'POKEMON'].includes(item.category) ? item.category : 'SPORTS') as NewsItem['category'],
+        summary: String(item.summary || '').slice(0, 200),
+        event_date: todayISO,
+        article_date: todayISO,
+        published_date: todayISO,
+      });
       continue;
     }
 
