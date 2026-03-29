@@ -57,7 +57,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [includeOther, setIncludeOther] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -68,12 +67,8 @@ export default function Dashboard() {
         const userId = 'gabriel_ebay_account';
         setUserId(userId);
 
-        // Load toggle preference from localStorage
-        const savedIncludeOther = localStorage.getItem('includeOtherSales') === 'true';
-        setIncludeOther(savedIncludeOther);
-
         // Fetch stats for authenticated user
-        const response = await fetch(`/api/transactions/stats?userId=${userId}&includeOther=${savedIncludeOther}`);
+        const response = await fetch(`/api/transactions/stats?userId=${userId}&includeOther=false`);
 
         if (!response.ok) {
           throw new Error('Failed to load dashboard');
@@ -99,36 +94,10 @@ export default function Dashboard() {
     fetchStats();
   }, []);
 
-  const handleToggleOther = async () => {
-    const newValue = !includeOther;
-    setIncludeOther(newValue);
-    localStorage.setItem('includeOtherSales', newValue.toString());
-    
-    // Refetch stats with new filter
-    try {
-      const userId = 'gabriel_ebay_account';
-      const response = await fetch(`/api/transactions/stats?userId=${userId}&includeOther=${newValue}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to load dashboard');
-      }
-      
-      const data = await response.json();
-      if (!data.transactions) {
-        data.transactions = [];
-      }
-      
-      setStats(data);
-    } catch (err) {
-      console.error('Error refetching stats:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load data');
-    }
-  };
-
   const refetchStats = async () => {
     try {
       const userId = 'gabriel_ebay_account';
-      const response = await fetch(`/api/transactions/stats?userId=${userId}&includeOther=${includeOther}`);
+      const response = await fetch(`/api/transactions/stats?userId=${userId}&includeOther=false`);
       
       if (!response.ok) {
         throw new Error('Failed to load dashboard');
@@ -186,7 +155,7 @@ export default function Dashboard() {
       
       <main className="relative z-10">
         {/* Header Branding - Full Width */}
-        <div className="px-4 container mx-auto max-w-6xl mb-8 py-8 flex justify-between items-center gap-8">
+        <div className="px-4 container mx-auto max-w-6xl mb-8 py-8 flex justify-center">
           <div className="flex flex-col text-center">
             <h1 className="text-5xl md:text-6xl font-black text-[#00ff41] mb-2 font-mono" style={{
               textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
@@ -197,21 +166,6 @@ export default function Dashboard() {
               Track every buy and sell. Dominate the card economy.
             </p>
           </div>
-          <button
-            onClick={handleToggleOther}
-            className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition whitespace-nowrap ${
-              includeOther
-                ? 'border-[#00ff41] text-[#00ff41] bg-[#00ff41]/10'
-                : 'border-[#ff006e] text-[#ff006e] bg-[#ff006e]/10'
-            }`}
-            style={{
-              boxShadow: includeOther
-                ? '0 0 10px rgba(0, 255, 65, 0.3)'
-                : '0 0 10px rgba(255, 0, 110, 0.3)'
-            }}
-          >
-            {includeOther ? '✓ Include Other' : '◆ Cards Only'}
-          </button>
         </div>
 
         <SectionDivider />
