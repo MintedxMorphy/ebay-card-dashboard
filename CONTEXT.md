@@ -85,40 +85,42 @@ token_expires_at: TIMESTAMP
 
 ---
 
-## Status Update (March 25, 2026)
+## Status Update (March 28, 2026 — LATEST)
 
-**✅ Confirmed Fixed:**
-- ✅ Transaction dates showing correctly (actual eBay order dates)
-- ✅ All 9 eBay sales syncing correctly (no missing sells)
-- ✅ Price input UX — user types decimals manually (working as designed)
+**✅ Completed Today (March 28):**
+- ✅ Home page branding refresh (removed Gabriel, cleaned up logo)
+- ✅ Edge News feature with Sports/Pokemon toggle buttons
+- ✅ Edge News search field (local feed search, not web search yet)
+- ✅ 12 articles minimum (6 sports + 6 pokemon) showing in feed
+- ✅ All deployed and live
 
-**No known issues remaining** — app is stable and production-ready.
+**⚠️ Known Limitation:**
+- Search function only searches local headlines in feed, not the web at large
+- Tom Brady search returns nothing because he's not in the current feed headlines
+- **Next session:** Enhance search to query web (Perplexity API) for real-time player/card info
+
+**Production Status:** 🟢 STABLE AND LIVE
+- All existing features working (eBay sync, P&L, charts, transactions)
+- Edge News widget fully integrated with toggles + local search
+- No data loss risk
+
+---
+
+## Recent Commits (March 28)
+
+**6434da5** — Add Sports/Pokemon toggle + search field to Edge News  
+**c01bd34** — Simplify API, remove aggressive date filtering  
+**Latest merge** — Full integration tested, 12 articles showing
 
 ---
 
 ## Next Priorities
 
-1. **Gamification** — XP system, trader ranks, badges
-2. **AI card photo valuation** — Claude Vision API for condition/value assessment
-3. **Inventory manager** — Track cards in collection, organize by set/sport
-4. **Wishlist + price alerts** — Watch cards, alert when prices drop
-5. **Weekly recap screen** — Profit summary, best performers, trends
-
----
-
-## Last Commits
-
-**575b10c** — Add CONTEXT.md (session protocol)  
-**7981b3d** — Browse API fallback + collector keywords fix  
-Date: Tue Mar 24 12:43:01 2026 -0500
-
-### Recent Fixes
-- Browse API now fires for ANY item that fails isCardItem keyword check
-- Added collector keywords (case hit, sonic boom, sb-, sp, ssp, case break, 1/1)
-- Item Specifics parsing (localizedAspects) for structured card classification
-- Stats query fixed to count only filtered transactions accurately
-- eBay sync pagination added to fetch all orders beyond first page
-- Transaction dates and sales sync confirmed working correctly
+1. **Edge News Web Search** — Search player/card names via Perplexity to show real-time market intel + impact
+2. **Gamification** — XP system, trader ranks, badges
+3. **AI card photo valuation** — Claude Vision API for condition/value assessment
+4. **Inventory manager** — Track cards in collection, organize by set/sport
+5. **Wishlist + price alerts** — Watch cards, alert when prices drop
 
 ---
 
