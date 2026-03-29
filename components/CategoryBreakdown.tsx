@@ -43,10 +43,6 @@ export default function CategoryBreakdown({ stats, transactions }: CategoryBreak
     },
   ];
 
-  // Count actual items per category
-  const sportsItems = transactions?.filter((tx) => tx.card_category === 'sports').length || 0;
-  const pokemonItems = transactions?.filter((tx) => tx.card_category === 'pokemon').length || 0;
-
   return (
     <div className="w-full">
       <ResponsiveContainer width="100%" height={300}>
@@ -72,31 +68,7 @@ export default function CategoryBreakdown({ stats, transactions }: CategoryBreak
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Category Stats */}
-      <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 border border-purple-500/30 p-4 rounded-lg backdrop-blur">
-          <h3 className="font-semibold text-purple-300 mb-2">🏈 Sports Cards</h3>
-          <p className="text-sm text-purple-200">
-            Items: <span className="font-bold">{sportsItems}</span>
-          </p>
-          <p className="text-sm text-purple-200">
-            Profit: <span className={`font-bold ${stats.sports_profit >= 0 ? 'text-[#00ffff]' : 'text-[#ff6b00]'}`}>
-              {formatCurrency(stats.sports_profit)}
-            </span>
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 border border-orange-500/30 p-4 rounded-lg backdrop-blur">
-          <h3 className="font-semibold text-orange-300 mb-2">⚡ Pokemon Cards</h3>
-          <p className="text-sm text-orange-200">
-            Items: <span className="font-bold">{pokemonItems}</span>
-          </p>
-          <p className="text-sm text-orange-200">
-            Profit: <span className={`font-bold ${stats.pokemon_profit >= 0 ? 'text-[#00ffff]' : 'text-[#ff6b00]'}`}>
-              {formatCurrency(stats.pokemon_profit)}
-            </span>
-          </p>
-        </div>
-      </div>
+
     </div>
   );
 }
