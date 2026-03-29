@@ -18,6 +18,15 @@ interface EdgeNewsData {
   cached?: boolean;
 }
 
+interface SearchResult {
+  headline: string;
+  category: 'SPORTS' | 'POKEMON' | 'MARKET';
+  impact: 'BULLISH' | 'BEARISH' | 'WATCH';
+  summary: string;
+  source_url: string;
+  relevance_score: number;
+}
+
 const IMPACT_STYLES: Record<NewsItem['impact'], { bg: string; text: string; glow: string; label: string }> = {
   BULLISH: {
     bg: 'bg-[#00ff41]/10',
@@ -57,13 +66,16 @@ type Category = 'SPORTS' | 'POKEMON';
 export default function EdgeNews() {
   const [sportsStories, setSportsStories] = useState<NewsItem[]>([]);
   const [pokemonStories, setPokemonStories] = useState<NewsItem[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [cached, setCached] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [activeCategory, setActiveCategory] = useState<Category>('SPORTS');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   const fetchNews = useCallback(async (forceRefresh = false) => {
     if (forceRefresh) setRefreshing(true);
@@ -101,6 +113,40 @@ export default function EdgeNews() {
     const interval = setInterval(() => fetchNews(true), 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchNews]);
+
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setIsSearchMode(false);
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const res = await fetch(`/api/edge-news/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+      setSearchResults(data.results || []);
+      setIsSearchMode(true);
+      setExpandedIndex(null);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    
+    // Debounce the search
+    const timeoutId = setTimeout(() => {
+      performSearch(value);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [performSearch]);
 
   const formatLastUpdated = () => {
     if (!lastUpdated) return '';
@@ -163,39 +209,43 @@ export default function EdgeNews() {
       {/* Search + Toggle Controls */}
       <div className="px-5 pt-3 pb-2 border-b border-[#00ff41]/10 flex flex-col gap-2">
         {/* Search Field */}
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setExpandedIndex(null);
-          }}
-          placeholder={activeCategory === 'SPORTS' ? 'Search player, team, sport... (e.g. Mahomes)' : 'Search card, set, Pokémon... (e.g. Charizard)'}
-          className="w-full bg-black border border-[#00ff41]/20 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search cards, players, markets... (e.g. Tom Brady, Charizard, TCG trends)"
+            className="w-full bg-black border border-[#00ff41]/20 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
+          />
+          {searching && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#00ff41]/60 text-xs animate-pulse">
+              SEARCHING...
+            </span>
+          )}
+        </div>
 
         {/* Toggle Buttons */}
         <div className="flex gap-2">
           <button
-            onClick={() => { setActiveCategory('SPORTS'); setSearchQuery(''); setExpandedIndex(null); }}
+            onClick={() => { setIsSearchMode(false); setActiveCategory('SPORTS'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
             className={`flex-1 py-1.5 rounded border text-xs font-mono font-bold tracking-wider transition ${
-              activeCategory === 'SPORTS'
+              !isSearchMode && activeCategory === 'SPORTS'
                 ? 'bg-[#00ffff]/15 border-[#00ffff]/60 text-[#00ffff]'
                 : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
             }`}
-            style={activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
+            style={!isSearchMode && activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
           >
             🏈 SPORTS
             <span className="ml-1.5 text-[10px] opacity-60">({sportsStories.length})</span>
           </button>
           <button
-            onClick={() => { setActiveCategory('POKEMON'); setSearchQuery(''); setExpandedIndex(null); }}
+            onClick={() => { setIsSearchMode(false); setActiveCategory('POKEMON'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
             className={`flex-1 py-1.5 rounded border text-xs font-mono font-bold tracking-wider transition ${
-              activeCategory === 'POKEMON'
+              !isSearchMode && activeCategory === 'POKEMON'
                 ? 'bg-[#8b00ff]/20 border-[#8b00ff]/60 text-[#c084fc]'
                 : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
             }`}
-            style={activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
+            style={!isSearchMode && activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
           >
             ⚡ POKEMON
             <span className="ml-1.5 text-[10px] opacity-60">({pokemonStories.length})</span>
@@ -204,7 +254,7 @@ export default function EdgeNews() {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {loading && !isSearchMode ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div
@@ -218,82 +268,147 @@ export default function EdgeNews() {
         </div>
       ) : (
         <div className="divide-y divide-[#00ff41]/10 max-h-[520px] overflow-y-auto">
-          {filteredStories.length === 0 ? (
-            <div className="py-10 text-center text-gray-500 font-mono text-sm">
-              {searchQuery.trim()
-                ? `No signals matching "${searchQuery}"`
-                : 'No signals detected. Try refreshing.'}
-            </div>
-          ) : (
-            filteredStories.map((item, index) => {
-              const impact = IMPACT_STYLES[item.impact];
-              const cat = CATEGORY_STYLES[item.category];
-              const isExpanded = expandedIndex === index;
+          {/* Search Results Mode */}
+          {isSearchMode ? (
+            searchResults.length === 0 ? (
+              <div className="py-10 text-center text-gray-500 font-mono text-sm">
+                {searching ? 'SEARCHING...' : `No market data found for "${searchQuery}"`}
+              </div>
+            ) : (
+              searchResults.map((item, index) => {
+                const impact = IMPACT_STYLES[item.impact];
+                const catLabel = item.category === 'SPORTS' ? { icon: '🏈', label: 'SPORTS' } 
+                               : item.category === 'POKEMON' ? { icon: '⚡', label: 'POKEMON' } 
+                               : { icon: '💹', label: 'MARKET' };
+                const isExpanded = expandedIndex === index;
 
-              return (
-                <div
-                  key={index}
-                  className={`px-5 py-3.5 transition-all cursor-pointer hover:bg-white/[0.02] ${isExpanded ? 'bg-white/[0.03]' : ''}`}
-                  onClick={() => setExpandedIndex(isExpanded ? null : index)}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Impact badge */}
-                    <div className="flex-shrink-0 mt-0.5">
-                      <span
-                        className={`inline-block text-[10px] font-black font-mono px-1.5 py-0.5 rounded border ${impact.bg} ${impact.text} ${impact.glow}`}
-                        style={{ letterSpacing: '0.05em' }}
-                      >
-                        {impact.label}
-                      </span>
-                    </div>
-
-                    {/* Main content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="text-white text-sm font-mono font-semibold leading-snug line-clamp-2">
-                          {item.headline}
-                        </p>
+                return (
+                  <div
+                    key={index}
+                    className={`px-5 py-3.5 transition-all cursor-pointer hover:bg-white/[0.02] ${isExpanded ? 'bg-white/[0.03]' : ''}`}
+                    onClick={() => setExpandedIndex(isExpanded ? null : index)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <span
+                          className={`inline-block text-[10px] font-black font-mono px-1.5 py-0.5 rounded border ${impact.bg} ${impact.text} ${impact.glow}`}
+                          style={{ letterSpacing: '0.05em' }}
+                        >
+                          {impact.label}
+                        </span>
                       </div>
 
-                      {/* Expanded summary */}
-                      {isExpanded && (
-                        <p className="text-gray-400 text-xs font-mono mt-1.5 mb-2 leading-relaxed">
-                          {item.summary}
-                        </p>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-white text-sm font-mono font-semibold leading-snug line-clamp-2">
+                            {item.headline}
+                          </p>
+                          <span className="text-[10px] text-[#00ff41]/60 font-mono flex-shrink-0 ml-2">
+                            {item.relevance_score}%
+                          </span>
+                        </div>
 
-                      {/* Footer row */}
-                      <div className="flex items-center gap-2 mt-1.5">
-                        {/* Category tag */}
-                        <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${cat.bg} ${cat.text}`}
-                        >
-                          {cat.icon} {item.category}
-                        </span>
-
-                        {/* Time */}
-                        <span className="text-gray-600 text-[10px] font-mono">
-                          {item.time_ago}
-                        </span>
-
-                        {/* Source link */}
-                        {item.source_url && item.source_url !== '#' && (
-                          <a
-                            href={item.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[#00ffff]/50 text-[10px] font-mono hover:text-[#00ffff] transition ml-auto"
-                          >
-                            SOURCE →
-                          </a>
+                        {isExpanded && (
+                          <p className="text-gray-400 text-xs font-mono mt-1.5 mb-2 leading-relaxed">
+                            {item.summary}
+                          </p>
                         )}
+
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 text-gray-400">
+                            {catLabel.icon} {catLabel.label}
+                          </span>
+
+                          {item.source_url && item.source_url !== '#' && (
+                            <a
+                              href={item.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[#00ffff]/50 text-[10px] font-mono hover:text-[#00ffff] transition ml-auto"
+                            >
+                              SOURCE →
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })
+            )
+          ) : (
+            /* News Feed Mode */
+            filteredStories.length === 0 ? (
+              <div className="py-10 text-center text-gray-500 font-mono text-sm">
+                {searchQuery.trim()
+                  ? `No signals matching "${searchQuery}"`
+                  : 'No signals detected. Try refreshing.'}
+              </div>
+            ) : (
+              filteredStories.map((item, index) => {
+                const impact = IMPACT_STYLES[item.impact];
+                const cat = CATEGORY_STYLES[item.category];
+                const isExpanded = expandedIndex === index;
+
+                return (
+                  <div
+                    key={index}
+                    className={`px-5 py-3.5 transition-all cursor-pointer hover:bg-white/[0.02] ${isExpanded ? 'bg-white/[0.03]' : ''}`}
+                    onClick={() => setExpandedIndex(isExpanded ? null : index)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <span
+                          className={`inline-block text-[10px] font-black font-mono px-1.5 py-0.5 rounded border ${impact.bg} ${impact.text} ${impact.glow}`}
+                          style={{ letterSpacing: '0.05em' }}
+                        >
+                          {impact.label}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-white text-sm font-mono font-semibold leading-snug line-clamp-2">
+                            {item.headline}
+                          </p>
+                        </div>
+
+                        {isExpanded && (
+                          <p className="text-gray-400 text-xs font-mono mt-1.5 mb-2 leading-relaxed">
+                            {item.summary}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${cat.bg} ${cat.text}`}
+                          >
+                            {cat.icon} {item.category}
+                          </span>
+
+                          <span className="text-gray-600 text-[10px] font-mono">
+                            {item.time_ago}
+                          </span>
+
+                          {item.source_url && item.source_url !== '#' && (
+                            <a
+                              href={item.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[#00ffff]/50 text-[10px] font-mono hover:text-[#00ffff] transition ml-auto"
+                            >
+                              SOURCE →
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )
           )}
         </div>
       )}

@@ -9,49 +9,58 @@ interface NewsItem {
   summary: string;
 }
 
-async function queryPerplexity(query: string, apiKey: string): Promise<string> {
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'sonar',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a real-time breaking news aggregator for trading card collectors and investors.',
-        },
-        {
-          role: 'user',
-          content: query,
-        },
-      ],
-      search_recency_filter: 'day',
-      return_citations: true,
-      max_tokens: 1200,
-    }),
-  });
+async function queryPerplexity(query: string, apiKey: string, category: string): Promise<string> {
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a real-time breaking news aggregator for trading card collectors and investors.',
+          },
+          {
+            role: 'user',
+            content: query,
+          },
+        ],
+        search_recency_filter: 'day',
+        return_citations: true,
+        max_tokens: 1200,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Perplexity API error ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[EdgeNews] Perplexity ${category} error ${response.status}: ${errorText.slice(0, 200)}`);
+      throw new Error(`Perplexity API error ${response.status}`);
+    }
+
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+      citations?: string[];
+    };
+
+    const content = data.choices?.[0]?.message?.content ?? '';
+    const citations: string[] = Array.isArray(data.citations) ? data.citations : [];
+
+    console.log(`[EdgeNews] ${category} query success: ${content.length} chars, ${citations.length} citations`);
+
+    // Append citations so Claude can use real URLs
+    const citationBlock = citations.length > 0
+      ? `\n\nSOURCE URLs:\n${citations.map((url, i) => `[${i + 1}] ${url}`).join('\n')}`
+      : '';
+
+    return content + citationBlock;
+  } catch (error) {
+    console.error(`[EdgeNews] ${category} query failed:`, error);
+    throw error;
   }
-
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content?: string } }>;
-    citations?: string[];
-  };
-
-  const content = data.choices?.[0]?.message?.content ?? '';
-  const citations: string[] = Array.isArray(data.citations) ? data.citations : [];
-
-  // Append citations so Claude can use real URLs
-  const citationBlock = citations.length > 0
-    ? `\n\nSOURCE URLs:\n${citations.map((url, i) => `[${i + 1}] ${url}`).join('\n')}`
-    : '';
-
-  return content + citationBlock;
 }
 
 async function classifyWithClaude(
@@ -130,15 +139,19 @@ export async function GET() {
   }
 
   try {
+    console.log('[EdgeNews] Starting news fetch...');
+    
     // Fetch sports and pokemon news in parallel
     const [sportsRaw, pokemonRaw] = await Promise.allSettled([
       queryPerplexity(
         'Breaking sports news today: NBA NFL MLB player injuries trades retirements milestones in last 24 hours. Give 5+ distinct stories.',
-        perplexityKey
+        perplexityKey,
+        'SPORTS'
       ),
       queryPerplexity(
         'Pokemon TCG news today: new sets announcements tournament results bans reprints in last 24 hours. Give 5+ distinct stories.',
-        perplexityKey
+        perplexityKey,
+        'POKEMON'
       ),
     ]);
 
