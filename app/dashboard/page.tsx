@@ -187,7 +187,7 @@ export default function Dashboard() {
       <main className="relative z-10">
         {/* Header Branding - Full Width */}
         <div className="mb-8 px-4 py-8">
-          <div className="container mx-auto max-w-6xl flex justify-between items-start gap-2">
+          <div className="container mx-auto max-w-6xl flex items-start gap-2">
             <div className="flex-1 min-w-0">
               <h1 className="text-5xl md:text-6xl font-black text-[#00ff41] mb-2 font-mono" style={{
                 textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
