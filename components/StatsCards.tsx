@@ -62,14 +62,14 @@ export default function StatsCards({ stats }: StatsCardsProps) {
         </div>
       </div>
 
-      {/* Net Profit/Loss */}
+      {/* Net P&L */}
       <div className={`bg-black rounded-xl p-6 border ${netProfit >= 0 ? 'border-[#00ff41]/30' : 'border-[#ff006e]/30'}`} style={{
         boxShadow: netProfit >= 0 ? '0 0 15px rgba(0, 255, 65, 0.1)' : '0 0 15px rgba(255, 0, 110, 0.1)'
       }}>
         <div className="flex justify-between items-start">
           <div>
             <h3 className={`${profitColor} font-semibold text-sm uppercase tracking-wide font-mono`}>
-              {netProfit >= 0 ? 'Net Profit' : 'Net Loss'}
+              Net P&L
             </h3>
             <p className={`text-3xl font-bold mt-2 font-mono ${profitColor}`}>
               {formatCurrency(Math.abs(netProfit))}
@@ -78,7 +78,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
               {netProfit >= 0 ? '📈 You\'re crushing it!' : '📉 Keep grinding!'}
             </p>
           </div>
-          <span className="text-3xl">{netProfit >= 0 ? '💰' : '⚠️'}</span>
+          <span className="text-3xl">{netProfit >= 0 ? '💰' : '📊'}</span>
         </div>
       </div>
     </div>

@@ -6,9 +6,7 @@ import StatsCards from '@/components/StatsCards';
 import ProfitChart from '@/components/ProfitChart';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import Navigation from '@/components/Navigation';
-import LogBuyForm from '@/components/LogBuyForm';
-import LogSellForm from '@/components/LogSellForm';
-import EditTransactionModal from '@/components/EditTransactionModal';
+import Transactions from '@/components/Transactions';
 import EdgeNews from '@/components/EdgeNews';
 
 interface Transaction {
@@ -34,6 +32,25 @@ interface Stats {
   transactions: Transaction[];
 }
 
+// Section Divider Component
+function SectionDivider() {
+  return (
+    <div className="my-8 border-t border-[#00ff41]/20" style={{
+      boxShadow: '0 0 10px rgba(0, 255, 65, 0.05)'
+    }}></div>
+  );
+}
+
+// Section Label Component
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <div className="mb-6 flex items-center gap-3">
+      <p className="text-sm font-mono text-gray-500 tracking-widest">{label}</p>
+      <div className="flex-1 h-px bg-gradient-to-r from-gray-500 to-transparent"></div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -41,8 +58,6 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [includeOther, setIncludeOther] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -166,12 +181,13 @@ export default function Dashboard() {
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 65, 0.1) 2px, rgba(0, 255, 65, 0.1) 4px)',
       }}></div>
 
-      <Navigation userId={userId || 'demo_user'} />
+      {/* ===== 1. HEADER ===== */}
+      <Navigation userId={userId || 'demo_user'} onTransactionAdded={refetchStats} />
       
       <main className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex justify-between items-start mb-4">
+        {/* Header Branding */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <h1 className="text-5xl md:text-6xl font-black text-[#00ff41] mb-2 font-mono" style={{
                 textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
@@ -182,40 +198,37 @@ export default function Dashboard() {
                 Track every buy and sell. Dominate the card economy.
               </p>
             </div>
-            <div className="flex gap-3 flex-wrap justify-end">
-              <LogBuyForm onBuyAdded={refetchStats} />
-              <LogSellForm onSellAdded={refetchStats} />
-              <button
-                onClick={handleToggleOther}
-                className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition ${
-                  includeOther
-                    ? 'border-[#00ff41] text-[#00ff41] bg-[#00ff41]/10'
-                    : 'border-[#ff006e] text-[#ff006e] bg-[#ff006e]/10'
-                }`}
-                style={{
-                  boxShadow: includeOther
-                    ? '0 0 10px rgba(0, 255, 65, 0.3)'
-                    : '0 0 10px rgba(255, 0, 110, 0.3)'
-                }}
-              >
-                {includeOther ? '✓ Include Other' : '◆ Cards Only'}
-              </button>
-            </div>
+            <button
+              onClick={handleToggleOther}
+              className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition whitespace-nowrap ${
+                includeOther
+                  ? 'border-[#00ff41] text-[#00ff41] bg-[#00ff41]/10'
+                  : 'border-[#ff006e] text-[#ff006e] bg-[#ff006e]/10'
+              }`}
+              style={{
+                boxShadow: includeOther
+                  ? '0 0 10px rgba(0, 255, 65, 0.3)'
+                  : '0 0 10px rgba(255, 0, 110, 0.3)'
+              }}
+            >
+              {includeOther ? '✓ Include Other' : '◆ Cards Only'}
+            </button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="mb-12">
+        <SectionDivider />
+
+        {/* ===== 2. P&L STATS ===== */}
+        <SectionLabel label="// P&L OVERVIEW" />
+        <div className="mb-8">
           <StatsCards stats={stats} />
         </div>
 
-        {/* Edge News Widget */}
-        <div className="mb-12">
-          <EdgeNews />
-        </div>
+        <SectionDivider />
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        {/* ===== 3. CHARTS SECTION ===== */}
+        <SectionLabel label="// PERFORMANCE" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="rounded-xl bg-black border border-[#00ffff]/30 p-6" style={{
             boxShadow: '0 0 15px rgba(0, 255, 255, 0.1)'
           }}>
@@ -231,55 +244,20 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* All Transactions */}
-        <div className="rounded-xl bg-black border border-[#00ff41]/30 p-6" style={{
-          boxShadow: '0 0 15px rgba(0, 255, 65, 0.1)'
-        }}>
-          <h2 className="text-2xl font-bold text-[#00ff41] mb-6 font-mono">All Transactions 🃏</h2>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {stats.transactions.length === 0 ? (
-              <p className="text-gray-400">No transactions yet. Start logging your cards!</p>
-            ) : (
-              [...stats.transactions]
-                .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
-                .map((tx, index) => (
-                <div
-                  key={tx.id}
-                  onClick={() => {
-                    setEditingTransaction(tx);
-                    setEditModalOpen(true);
-                  }}
-                  className="flex items-center justify-between p-3 rounded-lg bg-black border transition cursor-pointer hover:opacity-80" style={{
-                    borderColor: tx.transaction_type === 'buy' ? 'rgba(255, 0, 110, 0.2)' : 'rgba(0, 255, 65, 0.2)',
-                  }}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="text-[#8b00ff] font-bold text-sm font-mono bg-[#8b00ff]/10 px-2 py-1 rounded min-w-[2.5rem] text-center">
-                      #{index + 1}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-white font-mono">
-                        {tx.card_name}
-                        <span className={`ml-2 text-sm font-bold ${
-                          tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
-                        }`}>
-                          {tx.transaction_type === 'buy' ? '🛍️ Bought' : '🎯 Sold'}
-                        </span>
-                      </p>
-                      <p className="text-sm text-gray-400 font-mono">
-                        {tx.card_category === 'sports' ? '🏈 Sports' : '⚡ Pokémon'} • {new Date(tx.transaction_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={`text-right font-bold font-mono ${
-                    tx.transaction_type === 'buy' ? 'text-[#ff006e]' : 'text-[#00ff41]'
-                  }`}>
-                    {tx.transaction_type === 'buy' ? '-' : '+'}${tx.amount.toFixed(2)}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+        <SectionDivider />
+
+        {/* ===== 4. ALL TRANSACTIONS ===== */}
+        <SectionLabel label="// TRANSACTION HISTORY" />
+        <div className="mb-8">
+          <Transactions transactions={stats.transactions} onRefresh={refetchStats} />
+        </div>
+
+        <SectionDivider />
+
+        {/* ===== 5. EDGE NEWS ===== */}
+        <SectionLabel label="// MARKET INTELLIGENCE" />
+        <div className="mb-12">
+          <EdgeNews />
         </div>
 
         {/* Footer */}
@@ -287,18 +265,6 @@ export default function Dashboard() {
           <p className="font-mono">Keep crushing it in the card economy! 🚀</p>
         </div>
       </main>
-
-      {editingTransaction && (
-        <EditTransactionModal
-          transaction={editingTransaction}
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setEditingTransaction(null);
-          }}
-          onSave={refetchStats}
-        />
-      )}
     </div>
   );
 }

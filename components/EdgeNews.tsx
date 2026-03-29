@@ -176,80 +176,78 @@ export default function EdgeNews() {
         className="flex items-center justify-between px-6 py-4 border-b border-[#00ff41]/20"
         style={{ background: 'linear-gradient(90deg, rgba(0,255,65,0.05) 0%, transparent 100%)' }}
       >
-        <div className="flex items-center gap-3">
-          <span
-            className="text-2xl font-black font-mono tracking-wider"
-            style={{ color: '#00ff41', textShadow: '0 0 15px rgba(0,255,65,0.6), 0 0 30px rgba(0,255,65,0.3)' }}
-          >
-            ⚡ EDGE NEWS
-          </span>
+        <span
+          className="text-2xl font-black font-mono tracking-wider"
+          style={{ color: '#00ff41', textShadow: '0 0 15px rgba(0,255,65,0.6), 0 0 30px rgba(0,255,65,0.3)' }}
+        >
+          ⚡ EDGE NEWS
+        </span>
+        <div className="flex items-center gap-2">
           {cached && (
             <span className="text-xs text-gray-500 font-mono bg-gray-800/50 px-2 py-0.5 rounded border border-gray-700">
               CACHED
             </span>
           )}
-          {lastUpdated && (
-            <span className="text-xs text-gray-600 font-mono">
-              {formatLastUpdated()}
-            </span>
-          )}
+          <button
+            onClick={() => fetchNews(true)}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[#00ff41]/30 text-[#00ff41] text-xs font-mono font-bold transition hover:bg-[#00ff41]/10 hover:border-[#00ff41]/60 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            style={{ boxShadow: refreshing ? 'none' : '0 0 8px rgba(0,255,65,0.2)' }}
+            title={`Refresh news${lastUpdated ? ` (${formatLastUpdated()})` : ''}`}
+          >
+            <span className={refreshing ? 'animate-spin' : ''}>↻</span>
+            <span className="hidden sm:inline">{refreshing ? 'SCANNING' : 'REFRESH'}</span>
+          </button>
         </div>
-        <button
-          onClick={() => fetchNews(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-3 py-1.5 rounded border border-[#00ff41]/30 text-[#00ff41] text-xs font-mono font-bold transition hover:bg-[#00ff41]/10 hover:border-[#00ff41]/60 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ boxShadow: refreshing ? 'none' : '0 0 8px rgba(0,255,65,0.2)' }}
-          title="Refresh news"
-        >
-          <span className={refreshing ? 'animate-spin' : ''}>↻</span>
-          {refreshing ? 'SCANNING...' : 'REFRESH'}
-        </button>
       </div>
 
       {/* Search + Toggle Controls */}
-      <div className="px-5 pt-3 pb-2 border-b border-[#00ff41]/10 flex flex-col gap-2">
-        {/* Search Field */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search cards, players, markets... (e.g. Tom Brady, Charizard, TCG trends)"
-            className="w-full bg-black border border-[#00ff41]/20 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
-          />
-          {searching && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#00ff41]/60 text-xs animate-pulse">
-              SEARCHING...
-            </span>
-          )}
-        </div>
+      <div className="px-5 pt-3 pb-2 border-b border-[#00ff41]/10 flex flex-col gap-3">
+        {/* Toggle Buttons + Search Field (inline) */}
+        <div className="flex gap-2 items-stretch">
+          {/* Toggle Buttons */}
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={() => { setIsSearchMode(false); setActiveCategory('SPORTS'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
+              className={`py-1.5 px-3 rounded border text-xs font-mono font-bold tracking-wider transition whitespace-nowrap ${
+                !isSearchMode && activeCategory === 'SPORTS'
+                  ? 'bg-[#00ffff]/15 border-[#00ffff]/60 text-[#00ffff]'
+                  : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+              }`}
+              style={!isSearchMode && activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
+            >
+              🏈 SPORTS
+              <span className="ml-1 text-[10px] opacity-60 hidden sm:inline">({sportsStories.length})</span>
+            </button>
+            <button
+              onClick={() => { setIsSearchMode(false); setActiveCategory('POKEMON'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
+              className={`py-1.5 px-3 rounded border text-xs font-mono font-bold tracking-wider transition whitespace-nowrap ${
+                !isSearchMode && activeCategory === 'POKEMON'
+                  ? 'bg-[#8b00ff]/20 border-[#8b00ff]/60 text-[#c084fc]'
+                  : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+              }`}
+              style={!isSearchMode && activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
+            >
+              ⚡ POKEMON
+              <span className="ml-1 text-[10px] opacity-60 hidden sm:inline">({pokemonStories.length})</span>
+            </button>
+          </div>
 
-        {/* Toggle Buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setIsSearchMode(false); setActiveCategory('SPORTS'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
-            className={`flex-1 py-1.5 rounded border text-xs font-mono font-bold tracking-wider transition ${
-              !isSearchMode && activeCategory === 'SPORTS'
-                ? 'bg-[#00ffff]/15 border-[#00ffff]/60 text-[#00ffff]'
-                : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
-            }`}
-            style={!isSearchMode && activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
-          >
-            🏈 SPORTS
-            <span className="ml-1.5 text-[10px] opacity-60">({sportsStories.length})</span>
-          </button>
-          <button
-            onClick={() => { setIsSearchMode(false); setActiveCategory('POKEMON'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
-            className={`flex-1 py-1.5 rounded border text-xs font-mono font-bold tracking-wider transition ${
-              !isSearchMode && activeCategory === 'POKEMON'
-                ? 'bg-[#8b00ff]/20 border-[#8b00ff]/60 text-[#c084fc]'
-                : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
-            }`}
-            style={!isSearchMode && activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
-          >
-            ⚡ POKEMON
-            <span className="ml-1.5 text-[10px] opacity-60">({pokemonStories.length})</span>
-          </button>
+          {/* Search Field */}
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search cards, players... (e.g. Brady, Charizard)"
+              className="w-full bg-black border border-[#00ff41]/20 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
+            />
+            {searching && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#00ff41]/60 text-xs animate-pulse">
+                ↻
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
