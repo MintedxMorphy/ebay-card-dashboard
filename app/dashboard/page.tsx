@@ -187,8 +187,8 @@ export default function Dashboard() {
       <main className="relative z-10">
         {/* Header Branding - Full Width */}
         <div className="mb-8 px-4 py-8">
-          <div className="container mx-auto max-w-6xl flex justify-between items-start flex-wrap gap-4">
-            <div>
+          <div className="container mx-auto max-w-6xl flex justify-between items-start gap-2">
+            <div className="flex-1 min-w-0">
               <h1 className="text-5xl md:text-6xl font-black text-[#00ff41] mb-2 font-mono" style={{
                 textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
               }}>
@@ -200,7 +200,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={handleToggleOther}
-              className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition whitespace-nowrap ${
+              className={`px-4 py-2 rounded border-2 font-mono font-bold text-sm transition whitespace-nowrap flex-shrink-0 ${
                 includeOther
                   ? 'border-[#00ff41] text-[#00ff41] bg-[#00ff41]/10'
                   : 'border-[#ff006e] text-[#ff006e] bg-[#ff006e]/10'
