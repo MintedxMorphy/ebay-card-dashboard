@@ -11,6 +11,13 @@ interface NewsItem {
   summary: string;
 }
 
+interface EdgeNewsData {
+  news?: NewsItem[];
+  sports_stories?: NewsItem[];
+  pokemon_stories?: NewsItem[];
+  cached?: boolean;
+}
+
 const IMPACT_STYLES: Record<NewsItem['impact'], { bg: string; text: string; glow: string; label: string }> = {
   BULLISH: {
     bg: 'bg-[#00ff41]/10',
@@ -45,13 +52,18 @@ const CATEGORY_STYLES: Record<NewsItem['category'], { bg: string; text: string; 
   },
 };
 
+type Category = 'SPORTS' | 'POKEMON';
+
 export default function EdgeNews() {
-  const [news, setNews] = useState<NewsItem[]>([]);
+  const [sportsStories, setSportsStories] = useState<NewsItem[]>([]);
+  const [pokemonStories, setPokemonStories] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cached, setCached] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [activeCategory, setActiveCategory] = useState<Category>('SPORTS');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchNews = useCallback(async (forceRefresh = false) => {
     if (forceRefresh) setRefreshing(true);
@@ -61,8 +73,19 @@ export default function EdgeNews() {
       const url = forceRefresh ? '/api/edge-news?refresh=true' : '/api/edge-news';
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setNews(data.news || []);
+      const data: EdgeNewsData = await res.json();
+
+      // Support both old {news:[]} and new {sports_stories:[], pokemon_stories:[]} formats
+      if (data.sports_stories || data.pokemon_stories) {
+        setSportsStories(data.sports_stories || []);
+        setPokemonStories(data.pokemon_stories || []);
+      } else {
+        // Legacy: split combined news array by category
+        const allNews = data.news || [];
+        setSportsStories(allNews.filter((n) => n.category === 'SPORTS'));
+        setPokemonStories(allNews.filter((n) => n.category === 'POKEMON'));
+      }
+
       setCached(data.cached || false);
       setLastUpdated(new Date());
     } catch {
@@ -75,7 +98,6 @@ export default function EdgeNews() {
 
   useEffect(() => {
     fetchNews();
-    // Auto-refresh every 15 minutes
     const interval = setInterval(() => fetchNews(true), 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchNews]);
@@ -87,6 +109,16 @@ export default function EdgeNews() {
     if (mins === 1) return '1m ago';
     return `${mins}m ago`;
   };
+
+  // Get stories for active category, filtered by search
+  const activeStories = activeCategory === 'SPORTS' ? sportsStories : pokemonStories;
+  const filteredStories = searchQuery.trim()
+    ? activeStories.filter(
+        (item) =>
+          item.headline.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.summary.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : activeStories;
 
   return (
     <div
@@ -128,6 +160,49 @@ export default function EdgeNews() {
         </button>
       </div>
 
+      {/* Search + Toggle Controls */}
+      <div className="px-5 pt-3 pb-2 border-b border-[#00ff41]/10 flex flex-col gap-2">
+        {/* Search Field */}
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setExpandedIndex(null);
+          }}
+          placeholder={activeCategory === 'SPORTS' ? 'Search player, team, sport... (e.g. Mahomes)' : 'Search card, set, Pokémon... (e.g. Charizard)'}
+          className="w-full bg-black border border-[#00ff41]/20 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
+        />
+
+        {/* Toggle Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setActiveCategory('SPORTS'); setSearchQuery(''); setExpandedIndex(null); }}
+            className={`flex-1 py-1.5 rounded border text-xs font-mono font-bold tracking-wider transition ${
+              activeCategory === 'SPORTS'
+                ? 'bg-[#00ffff]/15 border-[#00ffff]/60 text-[#00ffff]'
+                : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+            }`}
+            style={activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
+          >
+            🏈 SPORTS
+            <span className="ml-1.5 text-[10px] opacity-60">({sportsStories.length})</span>
+          </button>
+          <button
+            onClick={() => { setActiveCategory('POKEMON'); setSearchQuery(''); setExpandedIndex(null); }}
+            className={`flex-1 py-1.5 rounded border text-xs font-mono font-bold tracking-wider transition ${
+              activeCategory === 'POKEMON'
+                ? 'bg-[#8b00ff]/20 border-[#8b00ff]/60 text-[#c084fc]'
+                : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+            }`}
+            style={activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
+          >
+            ⚡ POKEMON
+            <span className="ml-1.5 text-[10px] opacity-60">({pokemonStories.length})</span>
+          </button>
+        </div>
+      </div>
+
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -143,12 +218,14 @@ export default function EdgeNews() {
         </div>
       ) : (
         <div className="divide-y divide-[#00ff41]/10 max-h-[520px] overflow-y-auto">
-          {news.length === 0 ? (
+          {filteredStories.length === 0 ? (
             <div className="py-10 text-center text-gray-500 font-mono text-sm">
-              No signals detected. Try refreshing.
+              {searchQuery.trim()
+                ? `No signals matching "${searchQuery}"`
+                : 'No signals detected. Try refreshing.'}
             </div>
           ) : (
-            news.map((item, index) => {
+            filteredStories.map((item, index) => {
               const impact = IMPACT_STYLES[item.impact];
               const cat = CATEGORY_STYLES[item.category];
               const isExpanded = expandedIndex === index;

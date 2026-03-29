@@ -28,7 +28,7 @@ function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
-async function getCachedNews(): Promise<NewsItem[] | null> {
+async function getCachedNews(): Promise<{ sports_stories: NewsItem[]; pokemon_stories: NewsItem[] } | null> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
 
@@ -47,7 +47,19 @@ async function getCachedNews(): Promise<NewsItem[] | null> {
     const ageMinutes = (now.getTime() - fetchedAt.getTime()) / 1000 / 60;
 
     if (ageMinutes < CACHE_TTL_MINUTES) {
-      return data.news_items as NewsItem[];
+      // Support new {sports_stories, pokemon_stories} format or legacy {news_items:[]}
+      if (data.sports_stories && data.pokemon_stories) {
+        return {
+          sports_stories: data.sports_stories as NewsItem[],
+          pokemon_stories: data.pokemon_stories as NewsItem[],
+        };
+      }
+      // Legacy: split flat array by category
+      const items = (data.news_items || []) as NewsItem[];
+      return {
+        sports_stories: items.filter((n) => n.category === 'SPORTS'),
+        pokemon_stories: items.filter((n) => n.category === 'POKEMON'),
+      };
     }
     return null;
   } catch {
@@ -55,14 +67,16 @@ async function getCachedNews(): Promise<NewsItem[] | null> {
   }
 }
 
-async function cacheNews(items: NewsItem[]): Promise<void> {
+async function cacheNews(result: { sports_stories: NewsItem[]; pokemon_stories: NewsItem[] }): Promise<void> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
 
   try {
     await supabase.from('edge_news_cache').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('edge_news_cache').insert({
-      news_items: items,
+      sports_stories: result.sports_stories,
+      pokemon_stories: result.pokemon_stories,
+      news_items: [...result.sports_stories, ...result.pokemon_stories], // legacy compat
       fetched_at: new Date().toISOString(),
     });
   } catch {
@@ -183,7 +197,8 @@ async function queryPerplexity(query: string, apiKey: string): Promise<Perplexit
 async function classifyWithClaude(
   rawResults: string,
   citations: string[],
-  anthropicKey: string
+  anthropicKey: string,
+  targetCategory?: 'SPORTS' | 'POKEMON'
 ): Promise<NewsItem[]> {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
@@ -193,6 +208,10 @@ async function classifyWithClaude(
     citations.length > 0
       ? `\n\nAVAILABLE SOURCE URLs (use these for source_url):\n${citations.map((url, i) => `[${i + 1}] ${url}`).join('\n')}`
       : '';
+
+  const categoryInstruction = targetCategory
+    ? `All stories must have category: "${targetCategory}". Return at least 5 stories if the content supports it.`
+    : 'Categorize each as SPORTS or POKEMON. Return at least 5 sports stories and 5 Pokemon stories if content supports it.';
 
   const prompt = `Today is ${today} (UTC cutoff: ${cutoffISO}).
 
@@ -208,6 +227,8 @@ STRICT FILTERING RULE: Only include stories where "event_date" is AFTER ${cutoff
 - Example: LeBron James injury happened today → event_date = today → ACCEPT.
 - If you cannot determine event_date, SKIP the story (assume old event).
 
+${categoryInstruction}
+
 For each valid story, classify as:
 - BULLISH: Will likely INCREASE card values
 - BEARISH: Will likely DECREASE card values  
@@ -216,7 +237,7 @@ For each valid story, classify as:
 Raw search results:
 ${rawResults}${citationList}
 
-Return a JSON array of up to 8 news items that pass the filter:
+Return a JSON array of up to 10 news items that pass the filter:
 [
   {
     "headline": "Punchy trader-focused headline max 80 chars",
@@ -326,76 +347,88 @@ Return ONLY the JSON array. No markdown fences.`;
 // Main fetch
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function fetchLiveNews(): Promise<NewsItem[]> {
+interface FetchedNewsResult {
+  sports_stories: NewsItem[];
+  pokemon_stories: NewsItem[];
+}
+
+async function fetchLiveNews(): Promise<FetchedNewsResult> {
   const perplexityKey = process.env.PERPLEXITY_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
   if (!perplexityKey) {
     console.warn('[EdgeNews] PERPLEXITY_API_KEY not set — returning empty news');
-    return [];
+    return { sports_stories: [], pokemon_stories: [] };
   }
 
   const now = new Date();
   console.log(`[EdgeNews] Fetching live news at ${now.toISOString()}`);
   console.log(`[EdgeNews] 24h cutoff: ${new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()}`);
 
-  // Three targeted breaking-news queries with explicit date anchoring
-  const todayStr = now.toISOString().split('T')[0]; // e.g. "2026-03-28"
-  const queries = [
-    `Breaking sports news ${todayStr}: NBA NFL MLB player injury trade retirement announcement in the last 24 hours site:espn.com OR site:nba.com OR site:nfl.com OR site:mlb.com OR site:reuters.com OR site:apnews.com`,
-    `Pokemon card news today ${todayStr}: new set announcement reprint ban tournament results breaking last 24 hours`,
-    `PSA grading BGS CGC sports card news ${todayStr}: turnaround time population report announcement breaking last 24 hours`,
+  const todayStr = now.toISOString().split('T')[0];
+
+  // Run sports and pokemon queries in parallel (2 queries each for more stories)
+  const sportsQueries = [
+    `Breaking sports news ${todayStr}: NBA NFL MLB player injury trade retirement announcement in the last 24 hours. Give me at least 5 distinct stories.`,
+    `Sports card collecting news ${todayStr}: PSA BGS grading breakthrough athlete milestone rookie card news last 24 hours. Give me 5 stories.`,
+  ];
+  const pokemonQueries = [
+    `Pokemon card news today ${todayStr}: new set announcement reprint ban tournament results breaking last 24 hours. Give 5 stories.`,
+    `Pokemon TCG competitive news ${todayStr}: tournament winners banned cards new promo announcements last 24 hours. Give 5 stories.`,
   ];
 
-  const results = await Promise.allSettled(
-    queries.map((q) => queryPerplexity(q, perplexityKey))
+  const [sportsResults, pokemonResults] = await Promise.all([
+    Promise.allSettled(sportsQueries.map((q) => queryPerplexity(q, perplexityKey))),
+    Promise.allSettled(pokemonQueries.map((q) => queryPerplexity(q, perplexityKey))),
+  ]);
+
+  const sportsFulfilled = sportsResults.filter(
+    (r): r is PromiseFulfilledResult<PerplexityResponse> => r.status === 'fulfilled'
   );
-
-  for (let i = 0; i < results.length; i++) {
-    const r = results[i];
-    if (r.status === 'rejected') {
-      console.error(`[EdgeNews] Query ${i} failed:`, r.reason);
-    }
-  }
-
-  const fulfilledResults = results.filter(
+  const pokemonFulfilled = pokemonResults.filter(
     (r): r is PromiseFulfilledResult<PerplexityResponse> => r.status === 'fulfilled'
   );
 
-  if (fulfilledResults.length === 0) {
-    console.error('[EdgeNews] All Perplexity queries failed');
-    return [];
+  const sportsCombined = sportsFulfilled.map((r) => r.value.content).join('\n\n---\n\n');
+  const pokemonCombined = pokemonFulfilled.map((r) => r.value.content).join('\n\n---\n\n');
+  const sportsCitations = [...new Set(sportsFulfilled.flatMap((r) => r.value.citations))];
+  const pokemonCitations = [...new Set(pokemonFulfilled.flatMap((r) => r.value.citations))];
+
+  if (!anthropicKey || anthropicKey === 'your_anthropic_api_key_here') {
+    return {
+      sports_stories: [{
+        headline: '📰 Breaking news available — Claude key needed to classify',
+        source_url: '#',
+        time_ago: 'Just now',
+        impact: 'WATCH',
+        category: 'SPORTS',
+        summary: 'Set ANTHROPIC_API_KEY to enable AI-powered news classification.',
+      }],
+      pokemon_stories: [],
+    };
   }
 
-  const combined = fulfilledResults.map((r) => r.value.content).join('\n\n---\n\n');
-  const allCitations = [...new Set(fulfilledResults.flatMap((r) => r.value.citations))];
+  const [sportsStories, pokemonStories] = await Promise.all([
+    sportsCombined.trim()
+      ? classifyWithClaude(sportsCombined, sportsCitations, anthropicKey, 'SPORTS').catch((err) => {
+          console.error('[EdgeNews] Sports Claude classification failed:', err);
+          return [] as NewsItem[];
+        })
+      : Promise.resolve([] as NewsItem[]),
+    pokemonCombined.trim()
+      ? classifyWithClaude(pokemonCombined, pokemonCitations, anthropicKey, 'POKEMON').catch((err) => {
+          console.error('[EdgeNews] Pokemon Claude classification failed:', err);
+          return [] as NewsItem[];
+        })
+      : Promise.resolve([] as NewsItem[]),
+  ]);
 
-  console.log(`[EdgeNews] Combined content length: ${combined.length} chars`);
-  console.log(`[EdgeNews] Total unique citations: ${allCitations.length}`);
+  console.log(`[EdgeNews] Final: ${sportsStories.length} sports, ${pokemonStories.length} pokemon stories`);
 
-  if (!combined.trim()) {
-    return [];
-  }
-
-  if (anthropicKey && anthropicKey !== 'your_anthropic_api_key_here') {
-    try {
-      return await classifyWithClaude(combined, allCitations, anthropicKey);
-    } catch (err) {
-      console.error('[EdgeNews] Claude classification failed:', err);
-    }
-  }
-
-  // Fallback
-  return [
-    {
-      headline: '📰 Breaking news available — Claude key needed to classify',
-      source_url: '#',
-      time_ago: 'Just now',
-      impact: 'WATCH',
-      category: 'SPORTS',
-      summary: 'Set ANTHROPIC_API_KEY to enable AI-powered news classification.',
-    },
-  ];
+  return {
+    sports_stories: sportsStories,
+    pokemon_stories: pokemonStories,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -412,31 +445,38 @@ export async function GET(request: Request) {
     if (!forceRefresh) {
       const cached = await getCachedNews();
       if (cached) {
+        const allNews = [...cached.sports_stories, ...cached.pokemon_stories];
         return NextResponse.json({
-          news: cached,
+          news: allNews,
+          sports_stories: cached.sports_stories,
+          pokemon_stories: cached.pokemon_stories,
           cached: true,
           next_refresh: CACHE_TTL_MINUTES + ' minutes',
+          count: allNews.length,
         });
       }
     }
 
-    const news = await fetchLiveNews();
+    const result = await fetchLiveNews();
+    const allNews = [...result.sports_stories, ...result.pokemon_stories];
 
     // Only cache if we got real results
-    if (news.length > 0) {
-      await cacheNews(news);
+    if (allNews.length > 0) {
+      await cacheNews(result);
     }
 
     const responsePayload: Record<string, unknown> = {
-      news,
+      news: allNews,
+      sports_stories: result.sports_stories,
+      pokemon_stories: result.pokemon_stories,
       cached: false,
       fetched_at: new Date().toISOString(),
       next_refresh: CACHE_TTL_MINUTES + ' minutes',
-      count: news.length,
+      count: allNews.length,
     };
 
     if (debug) {
-      responsePayload.date_debug = news.map((n) => ({
+      responsePayload.date_debug = allNews.map((n) => ({
         headline: n.headline,
         event_date: n.event_date ?? 'unknown',
         article_date: n.article_date ?? 'unknown',
@@ -450,6 +490,8 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         news: [],
+        sports_stories: [],
+        pokemon_stories: [],
         cached: false,
         error: 'Failed to fetch live news. Check PERPLEXITY_API_KEY.',
       },
