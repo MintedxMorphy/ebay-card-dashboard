@@ -2,14 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TransactionForm from './TransactionForm';
 
 interface NavigationProps {
   userId?: string;
-  onTransactionAdded?: () => void;
 }
 
-export default function Navigation({ userId = 'demo_user', onTransactionAdded }: NavigationProps) {
+export default function Navigation({ userId = 'demo_user' }: NavigationProps) {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -33,7 +31,6 @@ export default function Navigation({ userId = 'demo_user', onTransactionAdded }:
           </h1>
         </Link>
         <div className="flex items-center space-x-4 ml-auto">
-          {onTransactionAdded && <TransactionForm onTransactionAdded={onTransactionAdded} />}
           <span className="text-sm text-gray-400 font-mono hidden md:inline">
             ID: <span className="text-[#00ff41]">{userId.substring(0, 8)}...</span>
           </span>

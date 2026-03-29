@@ -63,6 +63,7 @@ export default function CategoryBreakdown({ stats, transactions }: CategoryBreak
               color: '#fff',
             }}
             labelStyle={{ color: '#fff' }}
+            cursor={{ fill: 'rgba(0, 0, 0, 0)' }}
           />
           <Legend wrapperStyle={{ color: '#9ca3af' }} />
           <Bar dataKey="revenue" fill="#8b00ff" name="Revenue" radius={[8, 8, 0, 0]} />

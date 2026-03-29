@@ -182,12 +182,12 @@ export default function Dashboard() {
       }}></div>
 
       {/* ===== 1. HEADER ===== */}
-      <Navigation userId={userId || 'demo_user'} onTransactionAdded={refetchStats} />
+      <Navigation userId={userId || 'demo_user'} />
       
-      <main className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header Branding */}
-        <div className="mb-8">
-          <div className="flex justify-between items-start flex-wrap gap-4">
+      <main className="relative z-10">
+        {/* Header Branding - Full Width */}
+        <div className="mb-8 px-4 py-8">
+          <div className="container mx-auto max-w-6xl flex justify-between items-start flex-wrap gap-4">
             <div>
               <h1 className="text-5xl md:text-6xl font-black text-[#00ff41] mb-2 font-mono" style={{
                 textShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
@@ -218,51 +218,54 @@ export default function Dashboard() {
 
         <SectionDivider />
 
-        {/* ===== 2. P&L STATS ===== */}
-        <SectionLabel label="// P&L OVERVIEW" />
-        <div className="mb-8">
-          <StatsCards stats={stats} />
-        </div>
-
-        <SectionDivider />
-
-        {/* ===== 3. CHARTS SECTION ===== */}
-        <SectionLabel label="// PERFORMANCE" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="rounded-xl bg-black border border-[#00ffff]/30 p-6" style={{
-            boxShadow: '0 0 15px rgba(0, 255, 255, 0.1)'
-          }}>
-            <h2 className="text-2xl font-bold text-[#00ffff] mb-6 font-mono">Profit Over Time 📈</h2>
-            <ProfitChart transactions={stats.transactions} />
+        {/* Content Container */}
+        <div className="px-4 container mx-auto max-w-6xl">
+          {/* ===== 2. P&L STATS ===== */}
+          <SectionLabel label="// P&L OVERVIEW" />
+          <div className="mb-8">
+            <StatsCards stats={stats} />
           </div>
-          
-          <div className="rounded-xl bg-black border border-[#8b00ff]/30 p-6" style={{
-            boxShadow: '0 0 15px rgba(139, 0, 255, 0.1)'
-          }}>
-            <h2 className="text-2xl font-bold text-[#8b00ff] mb-6 font-mono">Category Breakdown 🏆</h2>
-            <CategoryBreakdown stats={stats} transactions={stats.transactions} />
+
+          <SectionDivider />
+
+          {/* ===== 3. CHARTS SECTION ===== */}
+          <SectionLabel label="// PERFORMANCE" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="rounded-xl bg-black border border-[#00ffff]/30 p-6" style={{
+              boxShadow: '0 0 15px rgba(0, 255, 255, 0.1)'
+            }}>
+              <h2 className="text-2xl font-bold text-[#00ffff] mb-6 font-mono">Profit Over Time 📈</h2>
+              <ProfitChart transactions={stats.transactions} />
+            </div>
+            
+            <div className="rounded-xl bg-black border border-[#8b00ff]/30 p-6" style={{
+              boxShadow: '0 0 15px rgba(139, 0, 255, 0.1)'
+            }}>
+              <h2 className="text-2xl font-bold text-[#8b00ff] mb-6 font-mono">Category Breakdown 🏆</h2>
+              <CategoryBreakdown stats={stats} transactions={stats.transactions} />
+            </div>
           </div>
-        </div>
 
-        <SectionDivider />
+          <SectionDivider />
 
-        {/* ===== 4. ALL TRANSACTIONS ===== */}
-        <SectionLabel label="// TRANSACTION HISTORY" />
-        <div className="mb-8">
-          <Transactions transactions={stats.transactions} onRefresh={refetchStats} />
-        </div>
+          {/* ===== 4. ALL TRANSACTIONS ===== */}
+          <SectionLabel label="// TRANSACTION HISTORY" />
+          <div className="mb-8">
+            <Transactions transactions={stats.transactions} onRefresh={refetchStats} />
+          </div>
 
-        <SectionDivider />
+          <SectionDivider />
 
-        {/* ===== 5. EDGE NEWS ===== */}
-        <SectionLabel label="// MARKET INTELLIGENCE" />
-        <div className="mb-12">
-          <EdgeNews />
-        </div>
+          {/* ===== 5. EDGE NEWS ===== */}
+          <SectionLabel label="// MARKET INTELLIGENCE" />
+          <div className="mb-12">
+            <EdgeNews />
+          </div>
 
-        {/* Footer */}
-        <div className="mt-12 text-center text-gray-500 text-sm border-t border-[#00ff41]/20 pt-8">
-          <p className="font-mono">Keep crushing it in the card economy! 🚀</p>
+          {/* Footer */}
+          <div className="mt-12 text-center text-gray-500 text-sm border-t border-[#00ff41]/20 pt-8">
+            <p className="font-mono">Keep crushing it in the card economy! 🚀</p>
+          </div>
         </div>
       </main>
     </div>

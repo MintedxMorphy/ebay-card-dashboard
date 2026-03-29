@@ -171,18 +171,35 @@ export default function EdgeNews() {
       className="rounded-xl bg-black border border-[#00ff41]/30 overflow-hidden"
       style={{ boxShadow: '0 0 20px rgba(0, 255, 65, 0.08), inset 0 0 40px rgba(0, 255, 65, 0.02)' }}
     >
-      {/* Header */}
+      {/* Header with Search Bar */}
       <div
-        className="flex items-center justify-between px-6 py-4 border-b border-[#00ff41]/20"
+        className="flex items-center justify-between px-6 py-4 border-b border-[#00ff41]/20 gap-4"
         style={{ background: 'linear-gradient(90deg, rgba(0,255,65,0.05) 0%, transparent 100%)' }}
       >
         <span
-          className="text-2xl font-black font-mono tracking-wider"
+          className="text-2xl font-black font-mono tracking-wider whitespace-nowrap"
           style={{ color: '#00ff41', textShadow: '0 0 15px rgba(0,255,65,0.6), 0 0 30px rgba(0,255,65,0.3)' }}
         >
           ⚡ EDGE NEWS
         </span>
-        <div className="flex items-center gap-2">
+        
+        {/* Search Bar (inline with title) */}
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search cards, players... (e.g. Brady, Charizard)"
+            className="w-full bg-black border border-[#00ff41]/30 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
+          />
+          {searching && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#00ff41]/60 text-xs animate-pulse">
+              ↻
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
           {cached && (
             <span className="text-xs text-gray-500 font-mono bg-gray-800/50 px-2 py-0.5 rounded border border-gray-700">
               CACHED
@@ -201,53 +218,34 @@ export default function EdgeNews() {
         </div>
       </div>
 
-      {/* Search + Toggle Controls */}
+      {/* Category Toggle Controls */}
       <div className="px-5 pt-3 pb-2 border-b border-[#00ff41]/10 flex flex-col gap-3">
-        {/* Toggle Buttons + Search Field (inline) */}
-        <div className="flex gap-2 items-stretch">
-          {/* Toggle Buttons */}
-          <div className="flex gap-2 flex-shrink-0">
-            <button
-              onClick={() => { setIsSearchMode(false); setActiveCategory('SPORTS'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
-              className={`py-1.5 px-3 rounded border text-xs font-mono font-bold tracking-wider transition whitespace-nowrap ${
-                !isSearchMode && activeCategory === 'SPORTS'
-                  ? 'bg-[#00ffff]/15 border-[#00ffff]/60 text-[#00ffff]'
-                  : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
-              }`}
-              style={!isSearchMode && activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
-            >
-              🏈 SPORTS
-              <span className="ml-1 text-[10px] opacity-60 hidden sm:inline">({sportsStories.length})</span>
-            </button>
-            <button
-              onClick={() => { setIsSearchMode(false); setActiveCategory('POKEMON'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
-              className={`py-1.5 px-3 rounded border text-xs font-mono font-bold tracking-wider transition whitespace-nowrap ${
-                !isSearchMode && activeCategory === 'POKEMON'
-                  ? 'bg-[#8b00ff]/20 border-[#8b00ff]/60 text-[#c084fc]'
-                  : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
-              }`}
-              style={!isSearchMode && activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
-            >
-              ⚡ POKEMON
-              <span className="ml-1 text-[10px] opacity-60 hidden sm:inline">({pokemonStories.length})</span>
-            </button>
-          </div>
-
-          {/* Search Field */}
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search cards, players... (e.g. Brady, Charizard)"
-              className="w-full bg-black border border-[#00ff41]/20 rounded px-3 py-1.5 text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#00ff41]/60 focus:ring-1 focus:ring-[#00ff41]/20 transition"
-            />
-            {searching && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#00ff41]/60 text-xs animate-pulse">
-                ↻
-              </span>
-            )}
-          </div>
+        {/* Toggle Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setIsSearchMode(false); setActiveCategory('SPORTS'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
+            className={`py-1.5 px-3 rounded border text-xs font-mono font-bold tracking-wider transition whitespace-nowrap ${
+              !isSearchMode && activeCategory === 'SPORTS'
+                ? 'bg-[#00ffff]/15 border-[#00ffff]/60 text-[#00ffff]'
+                : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+            }`}
+            style={!isSearchMode && activeCategory === 'SPORTS' ? { boxShadow: '0 0 10px rgba(0,255,255,0.2)' } : {}}
+          >
+            🏈 SPORTS
+            <span className="ml-1 text-[10px] opacity-60 hidden sm:inline">({sportsStories.length})</span>
+          </button>
+          <button
+            onClick={() => { setIsSearchMode(false); setActiveCategory('POKEMON'); setSearchQuery(''); setSearchResults([]); setExpandedIndex(null); }}
+            className={`py-1.5 px-3 rounded border text-xs font-mono font-bold tracking-wider transition whitespace-nowrap ${
+              !isSearchMode && activeCategory === 'POKEMON'
+                ? 'bg-[#8b00ff]/20 border-[#8b00ff]/60 text-[#c084fc]'
+                : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+            }`}
+            style={!isSearchMode && activeCategory === 'POKEMON' ? { boxShadow: '0 0 10px rgba(139,0,255,0.25)' } : {}}
+          >
+            ⚡ POKEMON
+            <span className="ml-1 text-[10px] opacity-60 hidden sm:inline">({pokemonStories.length})</span>
+          </button>
         </div>
       </div>
 
