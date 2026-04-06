@@ -109,24 +109,16 @@ export async function POST(request: NextRequest) {
     // The UNIQUE constraint on (user_id, ebay_order_id) prevents duplicates
     // Duplicates are expected on re-syncs and are safe to ignore
     if (cardTransactions.length > 0) {
-      console.log(`[SYNC] Inserting ${cardTransactions.length} transactions into Supabase...`);
-      const { error, data, status } = await supabase
+      console.log(`[SYNC] Upserting ${cardTransactions.length} transactions into Supabase...`);
+      const { error, count } = await supabase
         .from('transactions')
-        .insert(cardTransactions);
+        .upsert(cardTransactions, {
+          onConflict: 'user_id,ebay_order_id',
+          ignoreDuplicates: true,
+        });
 
       if (error) {
-        // Unique constraint violations (23505) are expected on re-syncs
-        // This happens when trying to insert an order that already exists
-        if (error.code === '23505') {
-          console.log(`[SYNC] ✓ Duplicate constraint (expected on re-sync) — ${cardTransactions.length} orders already in database`);
-          return NextResponse.json({
-            success: true,
-            transactionsAdded: 0,
-            message: `No new transactions. All ${cardTransactions.length} orders already synced.`,
-          });
-        }
-        
-        console.error(`[SYNC] ✗ Insert error (code: ${error.code}):`, error.message);
+        console.error(`[SYNC] ✗ Upsert error (code: ${error.code}):`, error.message);
         console.error(`[SYNC] Error details:`, error.details);
         return NextResponse.json(
           { error: `Failed to store transactions: ${error.message}` },
@@ -134,7 +126,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[SYNC] ✓ Successfully inserted ${cardTransactions.length} transactions`);
+      console.log(`[SYNC] ✓ Upsert complete — duplicates skipped, new records inserted`);
     }
 
     return NextResponse.json({
